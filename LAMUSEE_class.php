@@ -5,7 +5,7 @@ include "LAMUSEE_DBconnect.php";
 // //************************************************************** MOTHER CLASS
 
 global $wpdb; 
-$wpdb = OpenLamuseeDB();
+
 
 
 
@@ -28,6 +28,8 @@ class Lamusee{
 	public $regions;
 	public $articules;
 	
+	public $LMtables; 
+	
 	public function __construct() { 
 	
 		$this->LMobjects = array();
@@ -40,7 +42,7 @@ class Lamusee{
 		$this->dates = array();	
 		$this->periodes = array();	
 		$this->countries = array();	
-		$this->articles = array();	
+		$this->articles = array();
 
 	
 	}
@@ -55,18 +57,73 @@ class Lamusee{
 	}
 	
 	public function create_tables(){
+		
+		global $wpdb;
+		$wpdb = OpenLamuseeDB();
 
-		$people = new People("","","");
-		$shape = new Shape("","","");
-		$area = new Area("","","","","","");
+		$people = new people("","","");
+		$shape = new shape("","","");
+		$area = new area("","","","","","");
 		
 		$people->build_table();
 		$shape->build_table();
 		$area->build_table();
 		
+		$this->parse_old_table($shape);
+		$this->parse_old_table($area);
+		
+		
 	}
 	
-	private function parse_database(){
+	public function update_table($obj){
+		
+		global $wpdb;
+		$wpdb = OpenLamuseeDB();
+		
+		$class = get_class ($obj);
+
+		$table_name = "wp_lamusee_".$this->$class."s";
+		$arrayname = $LMClass."s";
+		
+		foreach( $wpdb->get_results("SELECT * FROM ".$table_name ) as $params) {
+			
+			addObject($class,$params);
+
+		}
+
+		
+	}
+	
+	
+	public function parse_old_table($obj){
+		
+		global $wpdb;
+		$wpdb = OpenOldLamusee();
+		
+		echo "WP ::::".$wpdb;
+		
+		$class = get_class ($obj);
+
+		$table_name = "wp_lamusee_".$class."s";
+		foreach( $wpdb->get_results("SELECT * FROM ".$table_name ) as $params) {
+			
+			addObject($class,$params);
+
+		}
+
+		
+	}
+	
+	public function addObject($LMClass,$properties){
+		
+			$arrayname = $LMClass."s";
+			$nObj = new $LMClass($properties);
+			array_push($this->$arrayname,$nObj);	
+
+	}
+
+	private function parse_database($db){
+		
 		
 		$this->shapes = array();
 		$this->areas = array();
@@ -215,7 +272,7 @@ class LMObject
 
     public $ID;
 	public $properties;
-	public $table;
+	public $LMClass;
 	
 	
 	public function __construct(){ 
@@ -225,6 +282,7 @@ class LMObject
 		$this->ID = 0;
 		//properties is aimed at dialoguing with different types of databases. 
 		$this->properties = array();
+		$this->$LMClass = "LMObject"; 
 		
 	}
 	
@@ -243,9 +301,9 @@ class LMObject
 	public function build_table() {
 		
 		global $wpdb;
-  		global $table_name ;
+  		$table_name ;
 		
-  		$table_name = "lamusee_".$this->table;
+  		$table_name = "lamusee_".$this->LMClass;
 
 		if($wpdb->query("DESCRIBE '$table_name'") == FALSE) 
 		{
@@ -266,6 +324,7 @@ class LMObject
 		}
 	}	
 	
+
 	
 }
 
@@ -294,7 +353,7 @@ class LMDate extends LMObject
 
 
 
-class Period extends LMObject
+class period extends LMObject
 {
 
 	private $name;
@@ -343,7 +402,7 @@ class LM_Event extends LMObject
 
 ////**************************************************************  SPACE CLASSES
 
-class Point extends LMObject
+class point extends LMObject
 {
 	private $x;
 	private $y;
@@ -388,7 +447,7 @@ class Country extends LMObject
 
 
 //People
-class People extends LMObject
+class people extends LMObject
 {
 	private $name;
 	private $period;
@@ -398,17 +457,33 @@ class People extends LMObject
 	private $work_place;
 	private $biography;
 
-	public function __construct($name,$period,$place_of_birth) { 
+	public function __construct($param) { 
 	
+		if(gettype ( $param )== "array"){
+			
+			foreach($param as $key => $row){
+			
+				if(property_exists ($get_class ($this),$key)) {
+				
+				$this->$key = $row;
+			
+				}
+			
+			}			
+			
+		}
 	
+
+	
+		/*$this->LMCLass = "people";
 	
 		$this->name = $name;
 		//period
 		$this->period = $period;
 		//place
-		$this->place_of_birth = $place_of_birth;
+		$this->place_of_birth = $place_of_birth;*/
 		
-		$this->table = "people";
+		$this->LMCLass= "people";
 		
 		$this->add_property("name","mediumtext");
 		$this->add_property("period","mediumtext");
@@ -468,7 +543,7 @@ class Book extends LMObject
 //************************************************************** GRAPHIC CLASSES
 
 
-class Shape extends LMObject{
+class shape extends LMObject{
 
 
 	private $shape_ID;
@@ -479,15 +554,30 @@ class Shape extends LMObject{
 	private $shape_paintings_list;
 	private $shape_clicks;
 
-
-	public function __construct($name,$nice_name,$paintings_list) { 
+	public function __construct($param) { 
 	
+		if(gettype ( $param )== "array"){
+			
+			foreach($param as $key => $row){
+			
+				if(property_exists ($get_class ($this),$key)) {
+				
+				$this->$key = $row;
+			
+				}
+			
+			}			
+			
+		}
+	/*public function __construct($name,$nice_name,$paintings_list) { 
+	
+	/*
 		$this->shape_name = $name;
 		$this->shape_nice_name = $nice_name;
 		$this->shape_paintings_list = $paintings_list;
-		
-		$this->table = "shape";
-		
+		*/
+		$this->LMCLass = "shape";
+	
 		$this->add_property("shape_name","mediumtext");
 		$this->add_property("shape_nice_name","mediumtext");
 		$this->add_property("shape_paintings_list","mediumtext");
@@ -552,7 +642,7 @@ class Shape extends LMObject{
 }
 
 
-class Area extends LMObject{
+class area extends LMObject{
 	
 	private $area_shape_name;
 	private $area_shape_type;
@@ -561,16 +651,34 @@ class Area extends LMObject{
 	private $area_painting;
 	private $area_id;
 
-	public function __construct($sn,$st,$nn,$c,$p,$id) { 
 	
+	public function __construct($param) { 
+	
+		if(gettype ( $param )== "array"){
+			
+			foreach($param as $key => $row){
+			
+				if(property_exists ($get_class ($this),$key)) {
+				
+				$this->$key = $row;
+			
+				}
+			
+			}			
+			
+		}
+	/*public function __construct($sn,$st,$nn,$c,$p,$id) { 
+	
+	
+			$this->LMCLass = "area";
 			$this->area_shape_name = $sn;
 			$this->area_shape_type = $st;
 			$this->area_nice_name = $nn;
 			$this->area_coords = $c;
 			$this->area_painting = $p;	
 			$this->area_id = $id;
-			
-			$this->table = "area";
+			*/
+			$this->LMClass = "area";
 			
 			//attention a ne pas mettre d'espaces dans les string!! cela donne une erreur SQL "
 			
