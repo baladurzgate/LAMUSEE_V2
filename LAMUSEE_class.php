@@ -80,15 +80,21 @@ class Lamusee{
 		global $wpdb;
 		$wpdb = OpenLamuseeDB();
 		
-		$class = get_class ($obj);
-
-		$table_name = "wp_lamusee_".$this->$class."s";
-		$arrayname = $LMClass."s";
+		$class = get_class($obj);
 		
-		foreach( $wpdb->get_results("SELECT * FROM ".$table_name ) as $params) {
-			
-			addObject($class,$params);
+		$class_plurial = $class."s";
 
+		$table_name = "lamusee_".$class_plurial;
+		echo 	$table_name;
+		
+		foreach ($this->{$class_plurial} as $obj){
+		
+			
+			$properties = $obj->get_property_string();
+			$properties = $obj->get_values_string();
+			
+			$query = "INSERT INTO Customers (".$properties_str.")VALUES (".$values.")";
+			
 		}
 
 		
@@ -98,21 +104,27 @@ class Lamusee{
 	public function parse_old_table($obj){
 		
 		global $wpdb;
+		$wpdb-> close();
 		$wpdb = OpenOldLamusee();
 		
-		echo "WP ::::".$wpdb;
+		$class = get_class($obj);
 		
-		$class = get_class ($obj);
+		$class_plurial = $class."s";
 
-		$table_name = "wp_lamusee_".$class."s";
-		foreach( $wpdb->get_results("SELECT * FROM ".$table_name ) as $params) {
+		$table_name = "wp_lamusee_".$class_plurial;
+		echo 	$table_name;
+
+		foreach( $wpdb->query("SELECT * FROM ".$table_name ) as $params) {
 			
-			addObject($class,$params);
+			$this->addObject($class,$params);
 
 		}
+		
+	
 
 		
 	}
+	
 	
 	public function addObject($LMClass,$properties){
 		
@@ -283,9 +295,8 @@ class LMObject
 		//properties is aimed at dialoguing with different types of databases. 
 		$this->properties = array();
 		$this->$LMClass = "LMObject"; 
-		
+
 	}
-	
 	public function add_property($pname,$ptype){
 	
 		$p = new LMProperty($pname,$ptype); 
@@ -298,12 +309,49 @@ class LMObject
 		
 	}
 	
+	public function get_properties_string(){
+	
+		$str = "";
+		$number_of_p = sizeof($this->properties);
+		for($i =0 ; $i < $number_of_p; $i++){
+			$p = $this->properties[$i];
+			$coma = ", ";
+			if($i < $number_of_p-1){
+				$coma = "";
+			}
+			$str.=$p.$coma;
+			
+		}
+		
+		return $str;
+		
+	}
+	
+	public function get_values_string(){
+	
+		$str = "'";
+		$number_of_p = sizeof($this->properties);
+		for($i =0 ; $i < $number_of_p; $i++){
+			$v= $this->{properties[$i]};
+			$coma = "', '";
+			if($i < $number_of_p-1){
+				$coma = "'";
+			}
+			$str.=$v.$coma;
+			
+		}
+		
+		return $str;
+		
+	}
+		
+	
 	public function build_table() {
 		
 		global $wpdb;
   		$table_name ;
 		
-  		$table_name = "lamusee_".$this->LMClass;
+  		$table_name = "lamusee_".$this->LMClass+"s";
 
 		if($wpdb->query("DESCRIBE '$table_name'") == FALSE) 
 		{
@@ -457,22 +505,23 @@ class people extends LMObject
 	private $work_place;
 	private $biography;
 
-	public function __construct($param) { 
-	
-		if(gettype ( $param )== "array"){
+		public function __construct($param) { 
 			
-			foreach($param as $key => $row){
-			
-				if(property_exists ($get_class ($this),$key)) {
-				
-				$this->$key = $row;
-			
-				}
-			
-			}			
-			
-		}
-	
+				if(gettype ( $param )== "array"){
+					
+					foreach($param as $key => $row){
+						
+						$class = get_class($this);
+					
+						if(property_exists ($class,$key)) {
+						
+							$this->$key = $row;
+					
+						}
+					
+					}			
+					
+				}		
 
 	
 		/*$this->LMCLass = "people";
@@ -559,10 +608,12 @@ class shape extends LMObject{
 		if(gettype ( $param )== "array"){
 			
 			foreach($param as $key => $row){
-			
-				if(property_exists ($get_class ($this),$key)) {
 				
-				$this->$key = $row;
+				$class = get_class($this);
+			
+				if(property_exists ($class,$key)) {
+				
+					$this->$key = $row;
 			
 				}
 			
@@ -653,20 +704,23 @@ class area extends LMObject{
 
 	
 	public function __construct($param) { 
-	
+			
 		if(gettype ( $param )== "array"){
 			
 			foreach($param as $key => $row){
-			
-				if(property_exists ($get_class ($this),$key)) {
 				
-				$this->$key = $row;
+				$class = get_class($this);
+			
+				if(property_exists ($class,$key)) {
+				
+					$this->$key = $row;
 			
 				}
 			
 			}			
 			
-		}
+		}	
+	
 	/*public function __construct($sn,$st,$nn,$c,$p,$id) { 
 	
 	
