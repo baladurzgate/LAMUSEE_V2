@@ -60,7 +60,9 @@ class Lamusee{
 		
 		global $wpdb;
 		$wpdb = OpenLamuseeDB();
-
+		
+		print_r($wpdb);
+		
 		$people = new people("","","");
 		$shape = new shape("","","");
 		$area = new area("","","","","","");
@@ -71,6 +73,9 @@ class Lamusee{
 		
 		$this->parse_old_table($shape);
 		$this->parse_old_table($area);
+		
+		$this->update_table($shape);
+		$this->update_table($area);
 		
 		
 	}
@@ -87,13 +92,17 @@ class Lamusee{
 		$table_name = "lamusee_".$class_plurial;
 		echo 	$table_name;
 		
-		foreach ($this->{$class_plurial} as $obj){
+		foreach ($this->{$class_plurial} as $o){
 		
 			
-			$properties = $obj->get_property_string();
-			$properties = $obj->get_values_string();
+			$prop_str = $o->get_properties_string();
+			$value_str = $o->get_values_string();
 			
-			$query = "INSERT INTO Customers (".$properties_str.")VALUES (".$values.")";
+			$sql = "INSERT INTO ".$table_name." (".$prop_str.") VALUES (".$value_str.")";
+			
+			$wpdb->query($sql);
+			
+			echo $sql;
 			
 		}
 
@@ -117,7 +126,18 @@ class Lamusee{
 		foreach( $wpdb->query("SELECT * FROM ".$table_name ) as $params) {
 			
 			$this->addObject($class,$params);
+			
 
+		}
+		$wpdb-> close();
+		$wpdb = OpenLamuseeDB();
+		
+		
+		
+		foreach ( $this->$class_plurial as $o){
+		
+			//print_r($o);
+		
 		}
 		
 	
@@ -315,11 +335,12 @@ class LMObject
 		$number_of_p = sizeof($this->properties);
 		for($i =0 ; $i < $number_of_p; $i++){
 			$p = $this->properties[$i];
+			$p_name = $p->name;
 			$coma = ", ";
-			if($i < $number_of_p-1){
-				$coma = "";
+			if($i == $number_of_p-1){
+				$coma = " ";
 			}
-			$str.=$p.$coma;
+			$str.=$p_name.$coma;
 			
 		}
 		
@@ -332,9 +353,11 @@ class LMObject
 		$str = "'";
 		$number_of_p = sizeof($this->properties);
 		for($i =0 ; $i < $number_of_p; $i++){
-			$v= $this->{properties[$i]};
+			$p = $this->properties[$i];
+			$p_name = $p->name;
+			$v= $this->{$p_name};
 			$coma = "', '";
-			if($i < $number_of_p-1){
+			if($i == $number_of_p-1){
 				$coma = "'";
 			}
 			$str.=$v.$coma;
@@ -349,9 +372,7 @@ class LMObject
 	public function build_table() {
 		
 		global $wpdb;
-  		$table_name ;
-		
-  		$table_name = "lamusee_".$this->LMClass+"s";
+  		$table_name = "lamusee_".$this->LMClass."s";
 
 		if($wpdb->query("DESCRIBE '$table_name'") == FALSE) 
 		{
@@ -368,7 +389,9 @@ class LMObject
 			
 			echo $sql;
 			
-			$wpdb->query($sql);
+			print_r($wpdb->query($sql));
+			
+		
 		}
 	}	
 	
@@ -532,7 +555,7 @@ class people extends LMObject
 		//place
 		$this->place_of_birth = $place_of_birth;*/
 		
-		$this->LMCLass= "people";
+		$this->LMClass= "people";
 		
 		$this->add_property("name","mediumtext");
 		$this->add_property("period","mediumtext");
@@ -595,13 +618,13 @@ class Book extends LMObject
 class shape extends LMObject{
 
 
-	private $shape_ID;
-	private $shape_name;
-	private $shape_creation_date;
-	private $shape_last_modification;
-	private $shape_nice_name;
-	private $shape_paintings_list;
-	private $shape_clicks;
+	public $shape_ID;
+	public  $shape_name;
+	public  $shape_creation_date;
+	public $shape_last_modification;
+	public  $shape_nice_name;
+	public  $shape_paintings_list;
+	public  $shape_clicks;
 
 	public function __construct($param) { 
 	
@@ -627,7 +650,7 @@ class shape extends LMObject{
 		$this->shape_nice_name = $nice_name;
 		$this->shape_paintings_list = $paintings_list;
 		*/
-		$this->LMCLass = "shape";
+		$this->LMClass = "shape";
 	
 		$this->add_property("shape_name","mediumtext");
 		$this->add_property("shape_nice_name","mediumtext");
@@ -695,12 +718,12 @@ class shape extends LMObject{
 
 class area extends LMObject{
 	
-	private $area_shape_name;
-	private $area_shape_type;
-	private $area_nice_name;
-	private $area_coords;
-	private $area_painting;
-	private $area_id;
+	public  $area_shape_name;
+	public  $area_shape_type;
+	public  $area_nice_name;
+	public  $area_coords;
+	public  $area_painting;
+	public  $area_id;
 
 	
 	public function __construct($param) { 
