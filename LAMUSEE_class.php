@@ -73,6 +73,7 @@ class Lamusee{
 		
 		$this->parse_old_table($shape);
 		$this->parse_old_table($area);
+		//$this->parse_old_table($people);
 		
 		$this->update_table($shape);
 		$this->update_table($area);
@@ -113,8 +114,9 @@ class Lamusee{
 	public function parse_old_table($obj){
 		
 		global $wpdb;
-		$wpdb-> close();
 		$wpdb = OpenOldLamusee();
+		
+		
 		
 		$class = get_class($obj);
 		
@@ -122,23 +124,33 @@ class Lamusee{
 
 		$table_name = "wp_lamusee_".$class_plurial;
 		echo 	$table_name;
-
-		foreach( $wpdb->query("SELECT * FROM ".$table_name ) as $params) {
+		
+		switch ($class) {
+			case 'area' || 'shape' :
 			
-			$this->addObject($class,$params);
+				foreach( $wpdb->query("SELECT * FROM ".$table_name ) as $params) {
+					$this->addObject($class,$params);
+				}
+				
+				break;
+				
+			case 'people':
+				
+				
 			
 
+				break;
+			case 'painting':
+
+			
+				break;
 		}
+
+
+
+		
 		$wpdb-> close();
-		$wpdb = OpenLamuseeDB();
-		
-		
-		
-		foreach ( $this->$class_plurial as $o){
-		
-			//print_r($o);
-		
-		}
+
 		
 	
 
@@ -547,7 +559,7 @@ class people extends LMObject
 				}		
 
 	
-		/*$this->LMCLass = "people";
+		/*
 	
 		$this->name = $name;
 		//period
@@ -556,7 +568,6 @@ class people extends LMObject
 		$this->place_of_birth = $place_of_birth;*/
 		
 		$this->LMClass= "people";
-		
 		$this->add_property("name","mediumtext");
 		$this->add_property("period","mediumtext");
 		$this->add_property("place_of_birth","mediumtext");
@@ -565,8 +576,6 @@ class people extends LMObject
 		$this->add_property("work_place","mediumtext");
 		$this->add_property("biography","mediumtext");
 		
-	
-	
 	}
 	
 	public function old_build_table() {
@@ -593,6 +602,72 @@ class people extends LMObject
 			$wpdb->query($sql);
 		}
 	}
+}
+
+//Painting
+class painting  extends LMObject
+{
+	public  $id; 
+	public  $name;
+	public  $nice_name;
+	public  $lowres_image;
+	public  $areas;
+	public  $linked_text;
+	public  $map_scale;
+	public  $map_offset_x;
+	public  $map_offset_y;
+	public  $image_highdef;
+	public  $artiste;
+	public  $titre_du_tableau;
+	public  $technique;
+	public  $date;
+	public  $dimensions;
+	public  $lieu_de_conservation;
+	public  $pays;
+	public  $region;
+	public  $artiste2;
+
+
+
+		public function __construct($param) { 
+			
+				if(gettype ( $param )== "array"){
+					
+					foreach($param as $key => $row){
+						
+						$class = get_class($this);
+					
+						if(property_exists ($class,$key)) {
+						
+							$this->$key = $row;
+					
+						}
+					
+					}			
+					
+				}		
+
+		$this->LMClass= "painting";
+		$this->add_property("name","mediumtext");
+		$this->add_property("nice_name","mediumtext");
+		$this->add_property("areas","mediumtext");
+		$this->add_property("linked_text","mediumtext");
+		$this->add_property("map_scale","mediumtext");
+		$this->add_property("map_offset_x","mediumtext");
+		$this->add_property("map_offset_y","mediumtext");
+		$this->add_property("image_highdef","mediumtext");
+		$this->add_property("artiste","mediumtext");
+		$this->add_property("technique","mediumtext");
+		$this->add_property("date","mediumtext");
+		$this->add_property("dimensions","mediumtext");
+		$this->add_property("lieu_de_conservation","mediumtext");
+		$this->add_property("pays","mediumtext");
+		$this->add_property("region","mediumtext");
+		$this->add_property("artiste2","mediumtext");
+
+		
+	}
+
 }
 
 
@@ -833,10 +908,7 @@ class area extends LMObject{
 
 //************************************************************** BIG CLASSES
 
-class Painting extends LMObject
-{
 
-}
 
 class Painting_image extends LMObject
 {
