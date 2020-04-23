@@ -1,10 +1,14 @@
+
 <?php
+/* V LOCAL */
+
+
 include "LAMUSEE_DBconnect.php";
 
 
 // //************************************************************** MOTHER CLASS
 
-global $wpdb; 
+global $lmdb; 
 
 
 
@@ -26,7 +30,8 @@ class Lamusee{
 	public $points;
 	public $countries;
 	public $regions;
-	public $articules;
+	public $articles;
+	
 	
 	public $LMtables; 
 	
@@ -48,6 +53,7 @@ class Lamusee{
 	}
 	
 	
+	
 	public function init(){
 		
 			
@@ -58,40 +64,45 @@ class Lamusee{
 	
 	public function create_tables(){
 		
-		global $wpdb;
-		$wpdb = OpenLamuseeDB();
+		global $lmdb;
+		$lmdb = OpenLamuseeDB();
 		
-		print_r($wpdb);
 		
 		$people = new people("","","");
 		$shape = new shape("","","");
 		$area = new area("","","","","","");
+		$p= array();
+		$painting = new painting($p);
 		
+		
+		//$people->add_property("LMID","mediumtext");
 		$people->build_table();
 		$shape->build_table();
-		$area->build_table();
+		//$area->build_table();
+		//$painting->build_table();
 		
-		$this->parse_old_table($shape);
+		/*$this->parse_old_table($shape);
 		$this->parse_old_table($area);
-		//$this->parse_old_table($people);
 		
+		$this->parse_old_table($painting);
+		*/
 		$this->update_table($shape);
-		$this->update_table($area);
+		//$this->update_table($area);
 		
 		
 	}
 	
 	public function update_table($obj){
 		
-		global $wpdb;
-		$wpdb = OpenLamuseeDB();
+		global $lmdb;
+		$lmdb = OpenLamuseeDB();
 		
 		$class = get_class($obj);
 		
 		$class_plurial = $class."s";
 
 		$table_name = "lamusee_".$class_plurial;
-		echo 	$table_name;
+		//echo 	$table_name;
 		
 		foreach ($this->{$class_plurial} as $o){
 		
@@ -101,7 +112,7 @@ class Lamusee{
 			
 			$sql = "INSERT INTO ".$table_name." (".$prop_str.") VALUES (".$value_str.")";
 			
-			$wpdb->query($sql);
+			$lmdb->query($sql);
 			
 			echo $sql;
 			
@@ -110,11 +121,11 @@ class Lamusee{
 		
 	}
 	
-	
 	public function parse_old_table($obj){
 		
-		global $wpdb;
-		$wpdb = OpenOldLamusee();
+		global $lmdb;
+		//$lmdb->close();
+		$lmdb = OpenOldLamusee();
 		
 		
 		
@@ -123,12 +134,19 @@ class Lamusee{
 		$class_plurial = $class."s";
 
 		$table_name = "wp_lamusee_".$class_plurial;
-		echo 	$table_name;
+		echo 	$class;
 		
 		switch ($class) {
-			case 'area' || 'shape' :
+			case "area" :
 			
-				foreach( $wpdb->query("SELECT * FROM ".$table_name ) as $params) {
+				foreach( $lmdb->query("SELECT * FROM ".$table_name ) as $params) {
+					$this->addObject($class,$params);
+				}
+				
+				break;
+			case "shape" :
+			
+				foreach( $lmdb->query("SELECT * FROM ".$table_name ) as $params) {
 					$this->addObject($class,$params);
 				}
 				
@@ -136,20 +154,30 @@ class Lamusee{
 				
 			case 'people':
 				
-				
 			
 
 				break;
 			case 'painting':
-
 			
+				/*$params = array();
+				$wp_posts = "wp_posts";
+				$wp_meta = "wp_postmeta";
+			
+				foreach( $lmdb->query("SELECT * FROM ".$wp_posts ) as $p) {
+				
+					/*print_r ($p); 
+					$params['id'] = $p['ID'];
+					$params['name'] = $p['post_title'];
+					
+				}*/
+		
 				break;
 		}
 
 
 
 		
-		$wpdb-> close();
+		$lmdb-> close();
 
 		
 	
@@ -157,13 +185,112 @@ class Lamusee{
 		
 	}
 	
+	public function generate_serial(){
+		
+		return rand(00,100)."_".time(d);
+	}
+	
 	
 	public function addObject($LMClass,$properties){
 		
-			$arrayname = $LMClass."s";
-			$nObj = new $LMClass($properties);
-			array_push($this->$arrayname,$nObj);	
+		$arrayname = $LMClass."s";
+		$nObj = new $LMClass($properties);
+		
+		$objmatch = $this->alreadyExist($nObj);
+		
+		if ($objmatch==false){
+			
+			$serialnumber = $this->generate_serial();
 
+			$LMID = "-LMID_".$LMClass."_".$serialnumber."_".sizeof($this->$arrayname)."-";
+			$nObj->setLMID($LMID);
+			array_push($this->$arrayname,$nObj);	
+			
+		}else{
+			
+			
+		}
+			
+
+
+	}
+	
+	public function loadObject($LMClass,$properties){
+		
+		$arrayname = $LMClass."s";
+		$nObj = new $LMClass($properties);
+		
+		$objmatch = $this->alreadyExist($nObj);
+		
+		if ($objmatch==false){
+
+			array_push($this->$arrayname,$nObj);	
+			
+		}else{
+			
+			
+		}
+			
+	}
+	
+	
+	
+	public function alreadyExist($obj){
+	
+		$keyp = $obj->KeyProperty;
+		$LMClass = $obj->LMClass;
+		$arrayname = $LMClass."s";
+		
+		echo $arrayname;
+		
+		$match = 0;
+		
+		$valuetocompare = $obj->$keyp;
+		foreach ($this->$arrayname as $o){
+			
+			if($o->$keyp == $valuetocompare){
+				
+					return $o;
+			}
+			
+			$match++;
+				
+		}
+		
+		if($match == 0){
+			return false; 
+		}
+	
+	}
+	
+	public function load_table($obj){
+		
+		
+		global $lmdb;
+		$lmdb = OpenLamuseeDB();
+		
+		$class = get_class($obj);
+		
+		$class_plurial = $class."s";
+		
+		
+
+		$table_name = "lamusee_".$class_plurial;
+		
+		echo "loading table ".$table_name;
+		
+		foreach( $lmdb->query("SELECT * FROM ".$table_name ) as $params) {
+			$this->loadObject($class,$params);
+		}
+				
+
+		$lmdb-> close();
+		
+		print_r($this->$class_plurial);
+
+
+		
+		
 	}
 
 	private function parse_database($db){
@@ -172,9 +299,10 @@ class Lamusee{
 		$this->shapes = array();
 		$this->areas = array();
 		
-		global $wpdb;
+		global $lmdb;
 		
-		foreach( $wpdb->get_results("SELECT * FROM wp_lamusee_shapes") as $key => $row) {
+		
+		foreach( $lmdb->get_results("SELECT * FROM wp_lamusee_shapes") as $key => $row) {
 
 			$nshape = new Shape($row->shape_name,$row->shape_nice_name,$row->shape_paintings_list);
 			
@@ -182,7 +310,7 @@ class Lamusee{
 
 		}
 		
-		foreach( $wpdb->get_results("SELECT * FROM wp_lamusee_areas") as $key => $row) {
+		foreach( $lmdb->get_results("SELECT * FROM wp_lamusee_areas") as $key => $row) {
 			
 							
 			$narea = new Area($row->area_shape_name,$row->area_shape_type,$row->area_nice_name,$row->area_coords,$row->area_painting,$row->area_id);
@@ -191,14 +319,6 @@ class Lamusee{
 			
 		}
 		
-		foreach( $wpdb->get_results("SELECT * FROM wp_lamusee_areas") as $key => $row) {
-			
-							
-			$narea = new Area($row->area_shape_name,$row->area_shape_type,$row->area_nice_name,$row->area_coords,$row->area_painting,$row->area_id);
-			
-			array_push($this->areas,$narea);
-			
-		}
 		
 		
 	}
@@ -222,7 +342,7 @@ class Lamusee{
 		
 		}	
 		
-		echo $html;
+		//echo $html;
 		
 		return $html;
 	
@@ -261,35 +381,10 @@ class Lamusee{
 		return false;	
 	}
 	
-	public function add_object(){
+
 	
-		foreach ($this->shapes as $shape){
-		
-			if($shape->getID() == $id){
 
-				return $shape;			
-			
-			}	
-			
-		}
-		
-		return false;	
-	}
-
-	public function add_LMObject(){
 	
-		foreach ($this->shapes as $shape){
-		
-			if($shape->getID() == $id){
-
-				return $shape;			
-			
-			}	
-			
-		}
-		
-		return false;	
-	}	
 
 }
 
@@ -314,21 +409,47 @@ class LMproperty
 class LMObject
 {
 
-    public $ID;
+    public $LMID;
 	public $properties;
 	public $LMClass;
+	public $KeyProperty;
 	
 	
 	public function __construct(){ 
 	
 		echo "new LMObject";
-		//generate unique ID and check DB (WIP)
-		$this->ID = 0;
-		//properties is aimed at dialoguing with different types of databases. 
 		$this->properties = array();
-		$this->$LMClass = "LMObject"; 
+		$this->LMClass = "LMObject"; 
+		$this->add_property("LMID","mediumtext");
 
+		//par default 
+		$this->setKeyProperty("LMID");
+		
 	}
+	
+	public function setLMID($id){
+		
+		$this->LMID = $id;
+		
+	}
+	
+	//diffère selon la class (ex pour people la property a comparer sera "name" si deux people on le meme name l'un est redondant
+	public function setKeyProperty($kp){
+		
+		$this->KeyProperty = $kp;
+		
+	}
+	
+	public function property_exist($pn){
+	
+		foreach ($this->properties as $prop){
+			if($prop->name == $pn){
+					return true;
+			}
+		}	
+		return false;
+	}
+	
 	public function add_property($pname,$ptype){
 	
 		$p = new LMProperty($pname,$ptype); 
@@ -337,7 +458,15 @@ class LMObject
 			$this->properties = array();
 		}
 		
-		array_push($this->properties,$p);
+		if($this->property_exist($pname)==false){
+			array_push($this->properties,$p);
+			echo '--X--'.$pname;
+			echo '----'.$ptype;
+		}else{
+			echo 'ALREADY EXIST';
+		}
+		
+
 		
 	}
 	
@@ -358,6 +487,10 @@ class LMObject
 		
 		return $str;
 		
+	}
+	
+	public function set_property_value($pn,$v){
+		$p = $this->properties[$pn];
 	}
 	
 	public function get_values_string(){
@@ -383,10 +516,13 @@ class LMObject
 	
 	public function build_table() {
 		
-		global $wpdb;
+		global $lmdb;
+		if($lmdb == null){
+			$lmdb = OpenLamuseeDB();
+		}
   		$table_name = "lamusee_".$this->LMClass."s";
 
-		if($wpdb->query("DESCRIBE '$table_name'") == FALSE) 
+		if($lmdb->query("DESCRIBE '$table_name'") == FALSE) 
 		{
 			
 			$sql = "CREATE TABLE " . $table_name . " (`id` mediumint(9) NOT NULL AUTO_INCREMENT,";
@@ -394,26 +530,32 @@ class LMObject
 			for ($i = 0; $i<sizeof($this->properties);$i++){
 					
 				$p = $this->properties[$i];
+				
+				echo "____".$p->name."_____";
+				
 				$sql.="`".$p->name."` ".$p->type." NOT NULL,";
 			
 			}
 			$sql.="UNIQUE KEY id (id));";
+
 			
-			echo $sql;
-			
-			print_r($wpdb->query($sql));
+			//print_r($lmdb->query($sql));
+			$lmdb->query($sql);
 			
 		
 		}
 	}	
 	
-
+	
+	
 	
 }
 
 
 class LMName extends LMObject
 {
+	
+	
 
 }
 
@@ -429,9 +571,11 @@ class LMDate extends LMObject
 	public function __construct($value,$comment){ 
 	
 		$this->value = $name;
-		$this->comment = comment;
+		$this->comment = $comment;
 	
 	}
+	
+
 }
 
 
@@ -445,6 +589,8 @@ class period extends LMObject
 	private $format;
 	
 	public function __construct($name,$begining_date,$end_date,$format){ 
+	
+		$this->setKeyProperty('name');
 	
 		$this->name = $name;
 		$this->begining_date = $begining_date;
@@ -532,15 +678,19 @@ class Country extends LMObject
 //People
 class people extends LMObject
 {
-	private $name;
-	private $period;
-	private $place_of_birth;
-	private $country;
-	private $profession;
-	private $work_place;
-	private $biography;
+	public $name;
+	public $period;
+	public $place_of_birth;
+	public $country;
+	public $profession;
+	public $work_place;
+	public $biography;
 
 		public function __construct($param) { 
+		
+				parent::__construct();
+		
+				
 			
 				if(gettype ( $param )== "array"){
 					
@@ -551,12 +701,15 @@ class people extends LMObject
 						if(property_exists ($class,$key)) {
 						
 							$this->$key = $row;
+							$this->add_property($key,"mediumtext");
 					
 						}
 					
 					}			
 					
-				}		
+				}
+
+				
 
 	
 		/*
@@ -566,6 +719,8 @@ class people extends LMObject
 		$this->period = $period;
 		//place
 		$this->place_of_birth = $place_of_birth;*/
+		
+		$this->setKeyProperty('name');
 		
 		$this->LMClass= "people";
 		$this->add_property("name","mediumtext");
@@ -578,17 +733,18 @@ class people extends LMObject
 		
 	}
 	
-	public function old_build_table() {
+	/*public function old_build_table() {
 		
-		global $wpdb;
+		global $lmdb;
   		global $table_name ;
   		
   		$table_name = "lamusee_peoples";
 
-		if($wpdb->query("DESCRIBE '$table_name'") == FALSE) 
+		if($lmdb->query("DESCRIBE '$table_name'") == FALSE) 
 		{
 			$sql = "CREATE TABLE " . $table_name . " (
 			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
+			`LMID` mediumtext NOT NULL,
 			`name` mediumtext NOT NULL,
 			`period` mediumtext NOT NULL,
 			`place_of_birth` mediumtext NOT NULL,
@@ -599,9 +755,9 @@ class people extends LMObject
 			UNIQUE KEY id (id)
 			);";
  
-			$wpdb->query($sql);
+			$lmdb->query($sql);
 		}
-	}
+	}*/
 }
 
 //Painting
@@ -630,6 +786,12 @@ class painting  extends LMObject
 
 
 		public function __construct($param) { 
+		
+				parent::__construct();
+		
+				$this->setKeyProperty('name');
+				
+				echo "NEW PAINTING";
 			
 				if(gettype ( $param )== "array"){
 					
@@ -648,6 +810,7 @@ class painting  extends LMObject
 				}		
 
 		$this->LMClass= "painting";
+		
 		$this->add_property("name","mediumtext");
 		$this->add_property("nice_name","mediumtext");
 		$this->add_property("areas","mediumtext");
@@ -694,14 +857,16 @@ class shape extends LMObject{
 
 
 	public $shape_ID;
-	public  $shape_name;
-	public  $shape_creation_date;
+	public $shape_name;
+	public $shape_creation_date;
 	public $shape_last_modification;
-	public  $shape_nice_name;
-	public  $shape_paintings_list;
-	public  $shape_clicks;
+	public $shape_nice_name;
+	public $shape_paintings_list;
+	public $shape_clicks;
 
 	public function __construct($param) { 
+	
+		parent::__construct();
 	
 		if(gettype ( $param )== "array"){
 			
@@ -766,12 +931,12 @@ class shape extends LMObject{
 	
 	public function old_build_table() {
 		
-		global $wpdb;
+		global $lmdb;
   		global $table_name ;
   		
   		$table_name = "lamusee_shapes";
 
-		if($wpdb->query("DESCRIBE '$table_name'") == FALSE) 
+		if($lmdb->query("DESCRIBE '$table_name'") == FALSE) 
 		{
 			$sql = "CREATE TABLE " . $table_name . " (
 			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -784,7 +949,7 @@ class shape extends LMObject{
 			UNIQUE KEY id (id)
 			);";
  
-			$wpdb->query($sql);
+			$lmdb->query($sql);
 		}
 	}
 
@@ -802,6 +967,8 @@ class area extends LMObject{
 
 	
 	public function __construct($param) { 
+	
+		parent::__construct();
 			
 		if(gettype ( $param )== "array"){
 			
@@ -875,12 +1042,12 @@ class area extends LMObject{
 	
 	public function old_build_table() {
 		
-		global $wpdb;
+		global $lmdb;
   		global $table_name ;
   		
   		$table_name = "lamusee_areas";
 
-		if($wpdb->query("DESCRIBE '$table_name'") == FALSE) 
+		if($lmdb->query("DESCRIBE '$table_name'") == FALSE) 
 		{
 			$sql = "CREATE TABLE " . $table_name . " (
 			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -892,7 +1059,7 @@ class area extends LMObject{
 			`area_id` mediumtext NOT NULL,
 			UNIQUE KEY id (id)
 			);";
-			$wpdb->query($sql);
+			$lmdb->query($sql);
 		}
 		
 		
@@ -1014,10 +1181,10 @@ if(!function_exists('build_shapes_table')){
 	
 	function build_shapes_table(){
 
-		global $wpdb;
+		global $lmdb;
   		global $table_name ;
   		
-  		$table_name = $wpdb->prefix."lamusee_shapes";
+  		$table_name = $lmdb->prefix."lamusee_shapes";
  
 		// on creer la table "wp_lamusee_shapes" qui renseigne sur le nom des shapes , l'index des tableaux(post_ID) où elles apparaissent et 
 		/*
@@ -1035,7 +1202,7 @@ if(!function_exists('build_shapes_table')){
 		*/
 		
 		
-		if($wpdb->get_var("show tables like '$table_name'") != $table_name) 
+		if($lmdb->get_var("show tables like '$table_name'") != $table_name) 
 		{
 			$sql = "CREATE TABLE " . $table_name . " (
 			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -1064,7 +1231,7 @@ if(!function_exists('build_shapes_table')){
 						
 						// on rempli la table wp_lamusee_shapes dans la base de donnée
 
-						$wpdb->insert($table_name,
+						$lmdb->insert($table_name,
     	 						array(
           						'shape_name'=>$from_list['name'],
           						'shape_nice_name'=>$from_list['name'],
@@ -1099,7 +1266,7 @@ if(!function_exists('build_shapes_table')){
 	}
 	
 	/*build_shapes_table();
-		$results = $wpdb->get_results("SELECT * FROM wp_lamusee_shapes");
+		$results = $lmdb->get_results("SELECT * FROM wp_lamusee_shapes");
 		print_r($results);*/
 		
 
@@ -1110,10 +1277,10 @@ if(!function_exists('transfer_areas_table')){
 	
 	function transfer_areas_table(){
 
-		global $wpdb;
+		global $lmdb;
   		global $table_name ;
   		
-  		$table_name = $wpdb->prefix."lamusee_areas";
+  		$table_name = $lmdb->prefix."lamusee_areas";
  
 		// on creer la table "wp_lamusee_areas" 
 		/*
@@ -1125,7 +1292,7 @@ if(!function_exists('transfer_areas_table')){
 		*/
 		
 		
-		if($wpdb->get_var("show tables like '$table_name'") != $table_name) 
+		if($lmdb->get_var("show tables like '$table_name'") != $table_name) 
 		{
 			$sql = "CREATE TABLE " . $table_name . " (
 			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -1147,7 +1314,7 @@ if(!function_exists('transfer_areas_table')){
 				
 				foreach ( $areas_list as $key => $area ) {	
 			
-						$wpdb->insert($table_name,
+						$lmdb->insert($table_name,
     	 						array(
           						'area_shape_name'=>$area->getShapeName(),
           						'area_shape_type'=>$area->getShapeType(),
@@ -1176,8 +1343,8 @@ if(!function_exists('transfer_areas_table')){
 		
 		
 		
-		$results = $wpdb->get_results("SELECT * FROM wp_lamusee_areas");
-		print_r($results);
+		$results = $lmdb->get_results("SELECT * FROM wp_lamusee_areas");
+		//print_r($results);
 		
 		
 	}
@@ -1189,9 +1356,147 @@ if(!function_exists('transfer_areas_table')){
 }
 
 
+/*    UTILS ________ */
 
 
 
+function romanCenturyToYear($str){
+
+    $array = str_split($str);
+    $i = 0;
+    $century = 0;
+    
+    foreach($array as $letter){
+        $n = $array[$i]= convertToArab($letter);
+        if($i==0){
+         $century=$n;
+        }
+        if($i>0){
+            $pn =  $array[$i-1];
+            if( $pn<$n){
+                $century+= $n-$pn;
+                if($pn==1){
+                    $century--;
+                }
+            }
+             if( $pn>=$n){
+                $century += $n;
+            }          
+        }
+        $i++;
+    }
+    
+    return ($century-1)*100;
+
+
+}
+
+function convertToArab($rn){
+
+    if($rn=="I"){
+        return 1;
+    }
+    if($rn=="V"){
+        return 5;
+    }
+    if($rn=="X"){
+        return 10;
+    }
+}
+
+
+function extract_date($str){
+
+	$extracted_dates = array(); 
+	/*single date*/
+	if(preg_match('#^[0-9]*$#',$str)&&!preg_match('#((?![0-9-]).)+#',$str)){
+		array_push($extracted_dates,$str);
+	}
+	
+	/*century in roman  number*/
+	if(preg_match('#[XVI]+[er]#', $str)){
+		preg_match_all('#[XVI]+[er]#', $str, $romanDate);
+		foreach( $romanDate[0] as $rd){
+			$year = romanCenturyToYear($rd);
+			$begining = $year+1;
+			$end  = $year+100;
+			
+			if(preg_match('#avant J.–C#', $str)){
+				$begining=($year+100)*-1;
+				$end= ($year+1)*-1;
+			}
+			
+			array_push($extracted_dates,$begining);
+			array_push($extracted_dates,$end );
+
+		}	
+
+	}		
+	
+	/*date integrarted in text with semicolumn ex : Lorenzo Lotto (1480-1557)*/
+	$period_match = "";
+	if(preg_match('#\((.*?)\)#', $str)){
+		preg_match_all('#\((.*?)\)#', $str, $period_match);
+		$i = 0;
+		foreach($period_match[0] as $p){
+			if($i>-1){	
+				$date_match = "";
+				preg_match_all('#[0-9]+#', $p,$date_match);
+				
+					foreach($date_match[0] as $d){
+						array_push($extracted_dates,$d);
+					}
+				//preg_match_all('#((?![0-9-]).)+#',$p,$qualifiers);
+			}
+			$i+=1;			
+		}
+	
+	/*date outside of semicolumn */
+	}else{
+		if(preg_match('#[0-9]+#',$str)&&preg_match('#((?![0-9-]).)+#',$str)){
+			
+			preg_match_all('#[0-9]+#', $str,$date_match);
+			
+			/*date with separator ex : 1526/27  */
+			if(preg_match('#\/#',$str)){
+				$begining = $date_match[0][0];
+				$arr = str_split($begining);
+				$added_years = $date_match[0][1];
+				$end = $arr[0].$arr[1].$added_years;
+				
+				array_push($extracted_dates,$begining);
+				array_push($extracted_dates,$end);
+			/*normal date*/
+			}else{
+				foreach($date_match[0] as $d){
+					array_push($extracted_dates,$d);
+				}			
+				
+			}
+		}
+
+		
+	}
+	
+	
+	$result="";
+	
+	if(sizeof(extracted_dates>0)){
+		$result = '<ul>';	
+		foreach( $extracted_dates as $ed){
+		
+			
+			$result.='<li>'.$ed.'</li>';
+		
+		}	
+		$result.='</ul>';				
+	}
+	
+	
+	
+	//return $result; 
+	return $extracted_dates; 
+}	
 
 
 ?>
