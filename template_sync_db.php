@@ -59,20 +59,20 @@ foreach ( $all_published_posts as $post ) {
 				// PAINTING ;
 				
 				/*
-					public  $id; 
+					public  $wp_id; 
 					public  $name;
 					public  $nice_name;
-					public  $lowres_image;
-					public  $areas;
+					public  $lowres_image;  X
+					public  $areas;        X
 					public  $linked_text;
-					public  $map_scale;
-					public  $map_offset_x;
-					public  $map_offset_y;
-					public  $image_highdef;
+					public  $map_scale;    X
+					public  $map_offset_x; X
+					public  $map_offset_y;   X
+					public  $image_highdef;  X
 					public  $artiste;
 					public  $titre_du_tableau;
 					public  $technique;
-					public  $date;
+					public  $date; -------------creation_date
 					public  $dimensions;
 					public  $lieu_de_conservation;
 					public  $pays;
@@ -82,12 +82,13 @@ foreach ( $all_published_posts as $post ) {
 				
 				*/
 				
+				// WP_ID
+
+				$painting_params['wp_id'] = $post->ID;
+				
 				// NAME 
 				
 				$name_field = get_the_title($post->ID);
-				
-				
-				
 				$painting_params['name'] = $name_field;
 				
 				
@@ -98,12 +99,7 @@ foreach ( $all_published_posts as $post ) {
 				
 				$painting_params['nice_name'] = $name_field;				
 				
-				
-				// LOWRES_IMAGE -- the path to the image using the areas 
-				
-				$lowres_image_field = get_field('lowres_image',$post->ID);
-				$painting_params['lowres_image'] = $lowres_image_field;
-
+			
 				
 				//AREAS
 				
@@ -120,6 +116,8 @@ foreach ( $all_published_posts as $post ) {
 				$areas_field = get_field('areas',$post->ID);
 				
 				$areas_id_list = array();
+				
+				$shapes_id_list = array();
 			
 				$count = 0;
 				
@@ -128,6 +126,8 @@ foreach ( $all_published_posts as $post ) {
 				$doc->loadHTML($areas_field);
 				
 				$area_tags = $doc->getElementsByTagName( "area" );
+				
+				
 				
 				foreach( $area_tags  as $area_tags  ){
 					
@@ -161,12 +161,15 @@ foreach ( $all_published_posts as $post ) {
 					$area_params['area_painting'] =  $post->ID;
 					// for the moment area will have their own id system 
 					$area_params['area_id'] =  $post->ID.$area_params['area_shape_name'].$count;
+					
+					
 
-					array_push($areas_id_list,$area_params['area_id']);
 					
 					
 					//adding for the first time
-					$lm->addObject('area',$area_params);
+					$new_area = $lm->addObject('area',$area_params);
+					
+					array_push($areas_id_list,$new_area->LMID);
 					
 					$count++;
 					
@@ -193,24 +196,87 @@ foreach ( $all_published_posts as $post ) {
 					
 					$stored_shape = $lm->alreadyExist($test_shape);
 					
+					
 					if($stored_shape == false){
 						
-						$lm->addObject('shape',$shape_params);
+						$new_shape = $lm->addObject('shape',$shape_params);
+						
+						array_push($shapes_id_list,$new_shape->LMID);
 						
 					}else{
 						
 						$stored_shape->add_painting($post->ID);
 						
+						array_push($shapes_id_list,$stored_shape->LMID);
+						
 					}
 					
-					
-					
-					
+				
 				}
 				
-				$painting_params['areas'] = array_to_string_coma_list($areas_id_list);
+				echo'<br>';
+				print_r($shapes_id_list);
+				echo'<br>';
+				
+				$painting_params['linked_shapes'] = $shapes_id_list;
+				
+				// LOWRES_IMAGE -- the path to the image using the areas 
+				
+				// PICTURE
+				
+				/*
+				
+				
+				$this->add_property("name","mediumtext");
+				$this->add_property("wp_id","mediumtext");
+				$this->add_property("lowres_image_path","mediumtext","file");
+				$this->add_property("highres_image_path","mediumtext","file");
+				$this->add_property("thumbnail_image_path","mediumtext","file");
+				$this->add_property("areas","mediumtext","area",true);
+				$this->add_property("map_scale","mediumtext");
+				$this->add_property("map_offset_x","mediumtext");
+				$this->add_property("map_offset_y","mediumtext");
+				$this->add_property("dimensions","mediumtext");
+				
+				*/
+				
+				$lowres_image_field = get_field('lowres_image',$post->ID);
+				
+				echo'<br>';
+				print_r($lowres_image_field);
+				echo'<br>';
+				
+				$picture_params = array();
+				
+				$picture_params['name'] = $lowres_image_field['filename'];
+				$picture_params['wp_id'] = $lowres_image_field['ID'];
+				$picture_params['lowres_image_path'] = $lowres_image_field['url'];
+				$picture_params['thumbnail_image_path'] = $lowres_image_field['sizes']['thumbnail'];
+				$picture_params['width'] = $lowres_image_field['width'];
+				$picture_params['height'] = $lowres_image_field['height'];
+				$picture_params['size'] = $lowres_image_field['filesize'];
+				$picture_params['areas'] = $areas_id_list;
+				$picture_params['map_scale'] = get_field('map_scale',$post->ID);
+				$picture_params['map_offset_x'] = get_field('map_offset_x',$post->ID);
+				$picture_params['map_offset_y'] = get_field('map_offset_y',$post->ID);
+				$picture_params['dimensions'] = get_field('dimensions',$post->ID);
+				
+				$test_picture = new picture($picture_params);
+				
+				$stored_picture = $lm->alreadyExist($test_picture);
+				
+				if($stored_picture==true){
+					
+					$painting_params['picture'] = $stored_picture->LMID;
+					
+				}else{
+					
+					$new_picture = $lm->addObject("picture",$picture_params);
+					$painting_params['picture'] = $new_picture->LMID;
+				}
+				
 
-				// ARTISTS
+				// ARTISTE
 
 				/*
 				
@@ -235,10 +301,10 @@ foreach ( $all_published_posts as $post ) {
 				$artist_params = array();
 				
 				$artist_params['name'] = $artist_name;
-				$artist_params['period'] = array_to_string_coma_list($artist_dates);
+				$artist_params['period'] = $artist_dates;
 				$artist_params['place_of_birth'] = "";
 				$artist_params['country'] = "";
-				$artist_params['profession'] = "";
+				$artist_params['profession'] = "artiste";
 				$artist_params['work_place'] = "";
 				$artist_params['biography'] = "";
 				
@@ -250,11 +316,11 @@ foreach ( $all_published_posts as $post ) {
 					
 					$new_artist = $lm->addObject('people',$artist_params);
 					
-					$painting_params['areas'] = $new_artist->LMID;
+					$painting_params['artiste'] = $new_artist->LMID;
 					
 				}else{
 					
-					$painting_params['areas'] = $stored_artist->LMID;
+					$painting_params['artiste'] = $stored_artist->LMID;
 					
 				}
 				
@@ -265,7 +331,7 @@ foreach ( $all_published_posts as $post ) {
 				
 				$date_field = get_field('date',$post->ID);
 				$dates =  extract_date($date_field);
-				$painting_params['dates'] =array_to_string_coma_list($dates);
+				$painting_params['dates'] =$dates;
 				
 				
 				// LIEU DE CONSERVATION 
@@ -302,10 +368,6 @@ foreach ( $all_published_posts as $post ) {
 				}				
 				
 				
-				$painting_params['lieu_de_conservation'] ="";
-				
-				
-				
 				// REGION 
 				
 				/*
@@ -324,11 +386,11 @@ foreach ( $all_published_posts as $post ) {
 				
 				$region_field = get_field('region',$post->ID);
 				
-				$region_params['name'] = $pays_field;
+				$region_params['name'] = $region_field;
 				$region_params['type'] = "region";		
-				$region_params['description'] = "TBD";		
+				$region_params['description'] = "";		
 				
-				$test_region = new place($region_params);
+				$test_region = new region($region_params);
 				
 				$stored_region = $lm->alreadyExist($test_region);
 				
@@ -366,9 +428,9 @@ foreach ( $all_published_posts as $post ) {
 				
 				$pays_params['name'] = $pays_field;
 				$pays_params['type'] = "pays";		
-				$pays_params['description'] = "TBD";		
+				$pays_params['description'] = "";		
 				
-				$test_pays = new place($pays_params);
+				$test_pays = new region($pays_params);
 				
 				$stored_pays = $lm->alreadyExist($test_pays);
 				
@@ -390,11 +452,84 @@ foreach ( $all_published_posts as $post ) {
 					
 				}				
 				
+				// DATE 
+				
+				$painting_params['creation_date'] = extract_date(get_field('date',$post->ID));
+
+
+				
 				
 				// ARTISTE 2  
 								
 				$artiste2_field = get_field('artiste2',$post->ID);
 				
+				//LINKED_TEXT(s) 
+				/*
+				
+					public  $wp_id; 
+					public  $name;
+					public  $nice_name;
+					public  $content;
+					public  $author;
+					public  $translator;
+					public  $date;
+					public  $linked_book;
+					
+				
+				*/
+				
+				
+
+				$linked_texts_field = get_field('linked_text',$post->ID);
+				
+				$linked_texts = array();
+				
+				foreach($linked_texts_field as $wp_text){
+					
+					$text_post_id = $wp_text->ID;
+					
+					$text_params = array();
+					$text_params['wp_id'] = $wp_text->ID;				
+					$text_params['name'] = $wp_text->post_name;				
+					$text_params['content'] = $wp_text->post_content;		
+
+					//AUTHOR
+
+
+					$author_params = array();
+					$author_params['name'] = get_field('author',$text_post_id );	
+					$text_params['author'] =$lm->add_or_call_object('people',$author_params);
+
+					
+					//TRANSLATOR
+				
+
+					$translator_params = array();
+					$translator_params['name'] = get_field('traductor',$text_post_id );	
+					$text_params['translator'] = $lm->add_or_call_object('people',$translator_params);
+					
+
+					$text_params['publishing_date'] = extract_date(get_field('publishing_date',$text_post_id ));	
+
+
+					//LINKED_BOOK
+					
+					$book_params = array();
+					$book_params['title'] = get_field('book_title',$text_post_id );
+					$book_params['author'] = $text_params['author'];
+					$called_book = $lm->add_or_call_object('book',$book_params,true);	
+					$text_params['linked_book'] =$called_book->LMID;	
+					
+					$called_text = $lm->add_or_call_object('text',$text_params,true);	
+					
+					$called_book->link_text($called_text->LMID);
+					
+					array_push($linked_texts,$called_text->LMID);
+					
+				}
+
+				$painting_params['linked_texts'] =$linked_texts;			
+
 				
 				// NEW PAINTING ! 
 
