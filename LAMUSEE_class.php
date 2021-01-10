@@ -28,7 +28,6 @@ class Lamusee{
 	public $periods;
 	public $places;
 	public $points;
-	public $countries;
 	public $regions;
 	public $articles;
 	
@@ -45,8 +44,9 @@ class Lamusee{
 		$this->artists = array();	
 		$this->peoples = array();	
 		$this->dates = array();	
+		$this->places = array();	
 		$this->periodes = array();	
-		$this->countries = array();	
+		$this->regions = array();	
 		$this->articles = array();
 
 	
@@ -57,8 +57,22 @@ class Lamusee{
 	public function init(){
 		
 			
-		$this->parse_database();
+	}
+	
+	
+	public function load_tables(){
 		
+		$people = new people(array());
+		$shape = new shape(array());
+		$area = new area(array());
+		$place = new place(array());
+		$painting = new painting(array());		
+		
+		$this->display_lmobj_list($people);
+		
+		$this->load_table($people);
+		$this->load_table($place);
+				
 		
 	}
 	
@@ -68,28 +82,55 @@ class Lamusee{
 		$lmdb = OpenLamuseeDB();
 		
 		
-		$people = new people("","","");
-		$shape = new shape("","","");
-		$area = new area("","","","","","");
-		$p= array();
-		$painting = new painting($p);
-		
-		
-		//$people->add_property("LMID","mediumtext");
+		$people = new people(array());
+		$shape = new shape(array());
+		$area = new area(array());
+		$place = new place(array());
+		$painting = new painting(array());
+
 		$people->build_table();
-		$shape->build_table();
-		//$area->build_table();
-		//$painting->build_table();
+		$place->build_table();
+
+	}
+	
+	public function update_tables(){
 		
-		/*$this->parse_old_table($shape);
-		$this->parse_old_table($area);
+		$people = new people(array());
+		$shape = new shape(array());
+		$area = new area(array());
+		$place = new place(array());
+		$painting = new painting(array());		
 		
-		$this->parse_old_table($painting);
-		*/
-		$this->update_table($shape);
-		//$this->update_table($area);
+		$this->update_table($people);
+		$this->update_table($place);
 		
 		
+	}
+	
+	
+	public function display_tables(){
+		
+		$people = new people(array());
+		$shape = new shape(array());
+		$area = new area(array());
+		$place = new place(array());
+		$painting = new painting(array());		
+		
+		$this->display_lmobj_list($people);
+		$this->display_lmobj_list($place);
+
+
+	}
+	
+	public function display_lmobj_list($obj){
+		
+		$class = get_class($obj);
+		
+		$class_plurial = $class."s";
+		
+		foreach($this->$class_plurial as $o){
+			$o->display_in_html();
+		}		
 	}
 	
 	public function update_table($obj){
@@ -102,22 +143,66 @@ class Lamusee{
 		$class_plurial = $class."s";
 
 		$table_name = "lamusee_".$class_plurial;
-		//echo 	$table_name;
 		
-		foreach ($this->{$class_plurial} as $o){
+		foreach ($this->$class_plurial as $o){
 		
+			// check if the object is already stored in the db by its  LMID
+
+			$sql = "SELECT * FROM ".$table_name." WHERE LMID = '".$o->LMID."'";
 			
-			$prop_str = $o->get_properties_string();
-			$value_str = $o->get_values_string();
+			$result = $lmdb->query($sql);
 			
-			$sql = "INSERT INTO ".$table_name." (".$prop_str.") VALUES (".$value_str.")";
-			
-			$lmdb->query($sql);
-			
-			echo $sql;
-			
+			if ($result->num_rows > 0) {
+
+			  while($row = $result->fetch_assoc()) {
+				  
+				 "<br>-------EXIST IN DB------<br>";
+				
+				$params = $row;
+				//$lm->loadObject($class,$params);
+				
+				// we update the modified entries 
+				
+			  }
+				
+			 }else {
+				
+				// we create the entry for this object
+				
+				$prop_str = $o->get_properties_string();
+				
+				$value_str = $o->get_values_string();
+				
+				$sql = "INSERT INTO ".$table_name." (".$prop_str.") VALUES (".$value_str.")";
+				
+				$lmdb->query($sql);			 
+			}
+
 		}
 
+		
+	}
+	
+	public function load_table($obj){
+		
+		global $lmdb;
+		
+		$lmdb = OpenLamuseeDB();
+		
+		$class = get_class($obj);
+		
+		$class_plurial = $class."s";
+
+		$table_name = "lamusee_".$class_plurial;	
+
+		$sql = "SELECT * FROM ".$table_name."";
+			
+
+		foreach( $lmdb->query($sql) as $params) {
+			$this->loadObject($class,$params);
+		}
+
+		
 		
 	}
 	
@@ -185,15 +270,30 @@ class Lamusee{
 		
 	}
 	
-	public function generate_serial(){
+	public function generate_serial($obj){
 		
-		return rand(00,100)."_".time(d);
+		
+		$class = get_class($obj);
+
+		$arrayname = $class."s";
+		
+		$keyp = $obj->KeyProperty;
+		
+		$key_value= $obj->$keyp;
+		
+		
+		
+		//$serial = "LM".$class.sizeof($this->$arrayname)."-".strlen($key_value).rand(000,100);
+		$serial = "LM".$class.sizeof($this->$arrayname);
+
+		return $serial;
+		
 	}
 	
 	
 	public function addObject($LMClass,$properties){
 		
-		$arrayname = $LMClass."s";
+		/*$arrayname = $LMClass."s";
 		$nObj = new $LMClass($properties);
 		
 		$objmatch = $this->alreadyExist($nObj);
@@ -206,12 +306,35 @@ class Lamusee{
 			$nObj->setLMID($LMID);
 			array_push($this->$arrayname,$nObj);	
 			
+			return $nObj;
+			
 		}else{
 			
+			return false;
 			
-		}
+		}*/
+		
+		//without checking if already exist. 
 			
+		$arrayname = $LMClass."s";
+		
+		$nObj = new $LMClass($properties);
 
+		$serialnumber = $this->generate_serial($nObj);
+		
+		$keyp = $nObj->KeyProperty;
+		
+		$key_value= $nObj->$keyp;
+		
+		$LMID = $serialnumber;
+		
+		$nObj->timestamp = time();
+		
+		$nObj->setLMID($LMID);
+		
+		array_push($this->$arrayname,$nObj);	
+			
+		return $nObj;
 
 	}
 	
@@ -222,17 +345,22 @@ class Lamusee{
 		
 		$objmatch = $this->alreadyExist($nObj);
 		
-		if ($objmatch==false){
+		//if ($objmatch==false){
 
-			array_push($this->$arrayname,$nObj);	
+		array_push($this->$arrayname,$nObj);	
 			
-		}else{
+		//}else{
 			
 			
-		}
+		//}
 			
 	}
 	
+	/* useful function to convert the old db to v2
+	compare key properties of an LMobj , the keyproperty is by default "LMID" but can be changed in sub class declarations.  
+	for exmple : for the class "people" the property to compare is "name"
+	
+	*/
 	
 	
 	public function alreadyExist($obj){
@@ -241,11 +369,10 @@ class Lamusee{
 		$LMClass = $obj->LMClass;
 		$arrayname = $LMClass."s";
 		
-		echo $arrayname;
-		
 		$match = 0;
 		
 		$valuetocompare = $obj->$keyp;
+		
 		foreach ($this->$arrayname as $o){
 			
 			if($o->$keyp == $valuetocompare){
@@ -258,39 +385,10 @@ class Lamusee{
 		}
 		
 		if($match == 0){
+			
 			return false; 
 		}
 	
-	}
-	
-	public function load_table($obj){
-		
-		
-		global $lmdb;
-		$lmdb = OpenLamuseeDB();
-		
-		$class = get_class($obj);
-		
-		$class_plurial = $class."s";
-		
-		
-
-		$table_name = "lamusee_".$class_plurial;
-		
-		echo "loading table ".$table_name;
-		
-		foreach( $lmdb->query("SELECT * FROM ".$table_name ) as $params) {
-			$this->loadObject($class,$params);
-		}
-				
-
-		$lmdb-> close();
-		
-		print_r($this->$class_plurial);
-
-
-		
-		
 	}
 
 	private function parse_database($db){
@@ -413,17 +511,20 @@ class LMObject
 	public $properties;
 	public $LMClass;
 	public $KeyProperty;
+	public $timestamp;
 	
 	
 	public function __construct(){ 
-	
-		echo "new LMObject";
+
+		
 		$this->properties = array();
 		$this->LMClass = "LMObject"; 
 		$this->add_property("LMID","mediumtext");
+		$this->add_property("timestamp","mediumtext");
 
 		//par default 
 		$this->setKeyProperty("LMID");
+		
 		
 	}
 	
@@ -460,10 +561,10 @@ class LMObject
 		
 		if($this->property_exist($pname)==false){
 			array_push($this->properties,$p);
-			echo '--X--'.$pname;
-			echo '----'.$ptype;
+			//echo '--X--'.$pname;
+			//echo '----'.$ptype;
 		}else{
-			echo 'ALREADY EXIST';
+			//echo 'ALREADY EXIST';
 		}
 		
 
@@ -546,6 +647,33 @@ class LMObject
 		}
 	}	
 	
+	public function display_in_html(){
+		
+		echo "<div style='border: 1px solid black; background-color: white;'>";
+		
+		echo "<br>";
+		
+		echo '<table><thead><tr>';
+		echo '<th><h2>'.$this->LMClass.'</h2></th>';
+
+
+		echo '</tr></thead><tbody>';
+
+		foreach($this->properties as $p){
+			$propname = $p->name;
+			echo '<tr>';
+				echo '<td><b>'.$propname.'  : </b></td>';
+				echo '<td>'.$this->$propname.'</td>';
+			echo '</tr>';
+		}
+		echo '</tbody></table>';
+		
+
+		
+		echo "</div>";
+		
+	}
+	
 	
 	
 	
@@ -620,6 +748,8 @@ class LM_Event extends LMObject
 	
 		$this->name = $name;
 		$this->event_date = $event_date;
+		
+		$this->setKeyProperty('event_date');
 	
 	}
 	
@@ -645,30 +775,101 @@ class point extends LMObject
 
 }
 
-class Place extends LMObject
+class place extends LMObject
 {
-	private $name;
-	private $point;
+	public $name;
+	public $description;
+	public $coords;
 	
-	public function __construct($name,$point){ 
+	public function __construct($param) { 
 	
-		$this->name = $name;
-		$this->point = $point;
+		parent::__construct();
 	
+		if(gettype ( $param )== "array"){
+			
+			foreach($param as $key => $row){
+				
+				$class = get_class($this);
+			
+				if(property_exists ($class,$key)) {
+				
+					$this->$key = $row;
+			
+				}
+			
+			}			
+			
+		}
+
+		$this->LMClass = "place";
+	
+		$this->add_property("name","mediumtext");
+		$this->add_property("coords","mediumtext");
+		
+		$this->setKeyProperty('name');
+		
 	}
+	
 }
 
 
-class Region extends LMObject
+class region extends LMObject
 {
+	public $name;
+	public $type;
+	public $description;
+	public $coords;
+	public $area;
+	public $linked_places; 
+	public $linked_regions; 
+	
+	
+	public function __construct($param) { 
+	
+		parent::__construct();
+	
+		if(gettype ( $param )== "array"){
+			
+			foreach($param as $key => $row){
+				
+				$class = get_class($this);
+			
+				if(property_exists ($class,$key)) {
+				
+					$this->$key = $row;
+			
+				}
+			
+			}			
+			
+		}
+
+		$this->LMClass = "region";
+	
+		$this->add_property("name","mediumtext");
+		$this->add_property("type","mediumtext");
+		$this->add_property("description","mediumtext");
+		$this->add_property("area","mediumtext");
+		$this->add_property("linked_places","mediumtext");
+		$this->add_property("linked_regions","mediumtext");
+		
+		$this->linked_regions = array();
+		$this->linked_places = array();
+		
+		$this->setKeyProperty('name');
+	}	
+	
+	public function link_region($r){
+		if($r!=null){
+			
+			if(in_array($r, $this->linked_regions)==false){
+				array_push($this->linked_regions,$r);
+			}
+		}
+		
+	}
 
 }
-
-class Country extends LMObject
-{
-
-}
-
 
 
 // //**************************************************************  CLASSES
@@ -689,10 +890,8 @@ class people extends LMObject
 		public function __construct($param) { 
 		
 				parent::__construct();
-		
 				
-			
-				if(gettype ( $param )== "array"){
+				if(gettype( $param )== "array"){
 					
 					foreach($param as $key => $row){
 						
@@ -701,7 +900,6 @@ class people extends LMObject
 						if(property_exists ($class,$key)) {
 						
 							$this->$key = $row;
-							$this->add_property($key,"mediumtext");
 					
 						}
 					
@@ -732,32 +930,7 @@ class people extends LMObject
 		$this->add_property("biography","mediumtext");
 		
 	}
-	
-	/*public function old_build_table() {
-		
-		global $lmdb;
-  		global $table_name ;
-  		
-  		$table_name = "lamusee_peoples";
 
-		if($lmdb->query("DESCRIBE '$table_name'") == FALSE) 
-		{
-			$sql = "CREATE TABLE " . $table_name . " (
-			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
-			`LMID` mediumtext NOT NULL,
-			`name` mediumtext NOT NULL,
-			`period` mediumtext NOT NULL,
-			`place_of_birth` mediumtext NOT NULL,
-			`country` mediumtext NOT NULL,
-			`profession` mediumtext NOT NULL,
-			`work_place` mediumtext NOT NULL,
-			`biography` mediumtext NOT NULL,
-			UNIQUE KEY id (id)
-			);";
- 
-			$lmdb->query($sql);
-		}
-	}*/
 }
 
 //Painting
@@ -811,6 +984,7 @@ class painting  extends LMObject
 
 		$this->LMClass= "painting";
 		
+		$this->add_property("id","mediumtext");
 		$this->add_property("name","mediumtext");
 		$this->add_property("nice_name","mediumtext");
 		$this->add_property("areas","mediumtext");
@@ -835,14 +1009,14 @@ class painting  extends LMObject
 
 
 // Extract
-class LM_Extract extends LMObject
+class text extends LMObject
 
 {
 
 }
 
 // BOOK
-class Book extends LMObject
+class book extends LMObject
 
 {
 
@@ -883,14 +1057,15 @@ class shape extends LMObject{
 			}			
 			
 		}
-	/*public function __construct($name,$nice_name,$paintings_list) { 
-	
-	/*
-		$this->shape_name = $name;
-		$this->shape_nice_name = $nice_name;
-		$this->shape_paintings_list = $paintings_list;
-		*/
+		
+		
 		$this->LMClass = "shape";
+		
+		$this->setKeyProperty("shape_name");
+		
+		
+		//to be serialised
+		$this->shape_paintings_list = array();
 	
 		$this->add_property("shape_name","mediumtext");
 		$this->add_property("shape_nice_name","mediumtext");
@@ -901,7 +1076,7 @@ class shape extends LMObject{
 	
 	public function add_painting($p){
 	
-			
+			array_push($this->shape_paintings_list,$p);
 		
 	}
 	
@@ -985,28 +1160,17 @@ class area extends LMObject{
 			}			
 			
 		}	
-	
-	/*public function __construct($sn,$st,$nn,$c,$p,$id) { 
-	
-	
-			$this->LMCLass = "area";
-			$this->area_shape_name = $sn;
-			$this->area_shape_type = $st;
-			$this->area_nice_name = $nn;
-			$this->area_coords = $c;
-			$this->area_painting = $p;	
-			$this->area_id = $id;
-			*/
-			$this->LMClass = "area";
-			
-			//attention a ne pas mettre d'espaces dans les string!! cela donne une erreur SQL "
-			
-			$this->add_property("area_shape_name","mediumtext");
-			$this->add_property("area_shape_type","mediumtext");
-			$this->add_property("area_nice_name","mediumtext");
-			$this->add_property("area_coords","mediumtext");
-			$this->add_property("area_painting","int");
-			$this->add_property("area_id","mediumtext");
+
+		$this->LMClass = "area";
+		
+		//attention a ne pas mettre d'espaces dans les string!! cela donne une erreur SQL "
+		
+		$this->add_property("area_shape_name","mediumtext");
+		$this->add_property("area_shape_type","mediumtext");
+		$this->add_property("area_nice_name","mediumtext");
+		$this->add_property("area_coords","mediumtext");
+		$this->add_property("area_painting","int");
+		$this->add_property("area_id","mediumtext");
 	
 	}
 	
@@ -1481,7 +1645,7 @@ function extract_date($str){
 	
 	$result="";
 	
-	if(sizeof(extracted_dates>0)){
+	if(sizeof($extracted_dates)>0){
 		$result = '<ul>';	
 		foreach( $extracted_dates as $ed){
 		
@@ -1497,6 +1661,29 @@ function extract_date($str){
 	//return $result; 
 	return $extracted_dates; 
 }	
+
+
+function extract_artist_name($str){
+
+$explode =  explode(" ",$str);
+$name = $explode[0];
+
+
+	return $name; 
+	
+}
+
+
+function array_to_string_coma_list($array){
+	$str = "";
+	$separator = ",";
+	foreach( $array as $el){
+		$str.=strval($el).$separator;
+	}
+	$remove_last_coma = substr($str, 0, -1);
+	return $remove_last_coma;
+}
+
 
 
 ?>
