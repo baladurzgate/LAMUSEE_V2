@@ -21,7 +21,9 @@ class Lamusee{
 	public $shapes;
 	public $areas;
 	public $paintings;
+	public $picture;
 	public $texts;
+	public $books;
 	public $artists;
 	public $peoples;
 	public $dates;
@@ -40,6 +42,7 @@ class Lamusee{
 		$this->shapes = array();
 		$this->areas = array();
 		$this->paintings = array();
+		$this->pictures = array();
 		$this->texts = array();
 		$this->artists = array();	
 		$this->peoples = array();	
@@ -48,6 +51,7 @@ class Lamusee{
 		$this->periodes = array();	
 		$this->regions = array();	
 		$this->articles = array();
+		$this->books = array();
 
 	
 	}
@@ -62,17 +66,28 @@ class Lamusee{
 	
 	public function load_tables(){
 		
+		global $lmdb;
+		$lmdb = OpenLamuseeDB();
+		
 		$people = new people(array());
 		$shape = new shape(array());
 		$area = new area(array());
 		$place = new place(array());
 		$region = new region(array());
-		$painting = new painting(array());		
+		$painting = new painting(array());	
+		$picture = new picture(array());		
+		$book = new book(array());		
+		$text = new text(array());		
 		
 		$this->load_table($people);
+		$this->load_table($area);
 		$this->load_table($place);
 		$this->load_table($region);
-		$painting = new painting(array());	
+		$this->load_table($painting);
+		$this->load_table($picture);
+		$this->load_table($text);
+		$this->load_table($book);
+
 				
 		
 	}
@@ -89,14 +104,26 @@ class Lamusee{
 		$region = new region(array());
 		$place = new place(array());
 		$painting = new painting(array());
+		$picture = new picture(array());
+		$book = new book(array());
+		$text = new text(array());
 
+		$picture->build_table();
 		$people->build_table();
+		$shape->build_table();
+		$area->build_table();
 		$place->build_table();
 		$region->build_table();
+		$painting->build_table();
+		$book->build_table();
+		$text->build_table();
 
 	}
 	
 	public function update_tables(){
+		
+		global $lmdb;
+		$lmdb = OpenLamuseeDB();
 		
 		$people = new people(array());
 		$shape = new shape(array());
@@ -104,10 +131,19 @@ class Lamusee{
 		$place = new place(array());
 		$region = new region(array());
 		$painting = new painting(array());		
+		$picture = new picture(array());
+		$book = new book(array());
+		$text = new text(array());
 		
+		$this->update_table($area);
+		$this->update_table($shape);
 		$this->update_table($people);
-		$this->update_table($people);
+		$this->update_table($place);
 		$this->update_table($region);
+		$this->update_table($painting);
+		$this->update_table($picture);
+		$this->update_table($book);
+		$this->update_table($text);
 		
 		
 	}
@@ -120,11 +156,20 @@ class Lamusee{
 		$area = new area(array());
 		$place = new place(array());
 		$region = new region(array());
-		$painting = new painting(array());		
+		$painting = new painting(array());	
+		$picture = new picture(array());	
+		$book = new book(array());		
+		$text = new text(array());
 		
+		$this->display_lmobj_list($area);
+		$this->display_lmobj_list($shape);
 		$this->display_lmobj_list($people);
 		$this->display_lmobj_list($place);
 		$this->display_lmobj_list($region);
+		$this->display_lmobj_list($picture);
+		$this->display_lmobj_list($painting);
+		$this->display_lmobj_list($text);
+		$this->display_lmobj_list($book);
 
 
 	}
@@ -219,65 +264,49 @@ class Lamusee{
 		
 	}
 	
-	public function parse_old_table($obj){
+	public function add_or_call_object($class,$params,$return_object=false){
 		
-		global $lmdb;
-		//$lmdb->close();
-		$lmdb = OpenOldLamusee();
+		$useful_lmid ="";
 		
+		echo "------------------------$class------------------------";
 		
+		$test_lmobj = new $class($params);
 		
-		$class = get_class($obj);
+		$stored_lmobj = $this->alreadyExist($test_lmobj);
 		
-		$class_plurial = $class."s";
-
-		$table_name = "wp_lamusee_".$class_plurial;
-		echo 	$class;
-		
-		switch ($class) {
-			case "area" :
+		if($stored_lmobj == false){
 			
-				foreach( $lmdb->query("SELECT * FROM ".$table_name ) as $params) {
-					$this->addObject($class,$params);
+				$new_lmobj = $this->addObject($class,$params);
+				
+				$useful_lmid = $new_lmobj->LMID;
+				
+				if($return_object){
+					return $new_lmobj;
 				}
 				
-				break;
-			case "shape" :
+		}else{
+			$useful_lmid = $stored_lmobj->LMID;
 			
-				foreach( $lmdb->query("SELECT * FROM ".$table_name ) as $params) {
-					$this->addObject($class,$params);
-				}
-				
-				break;
-				
-			case 'people':
-				
-			
-
-				break;
-			case 'painting':
-			
-				/*$params = array();
-				$wp_posts = "wp_posts";
-				$wp_meta = "wp_postmeta";
-			
-				foreach( $lmdb->query("SELECT * FROM ".$wp_posts ) as $p) {
-				
-					/*print_r ($p); 
-					$params['id'] = $p['ID'];
-					$params['name'] = $p['post_title'];
-					
-				}*/
-		
-				break;
+			if($return_object){
+				return $stored_lmobj;
+			}
 		}
-
-
-
 		
-		$lmdb-> close();
-
+		
+		
+		return $useful_lmid;
 	}
+	
+	public function find_lmobject($LMID){
+		
+		$explode = explode($LMID,"-");
+		$class = substr($explode[0],2);
+		$index = $explode[1];
+		
+		return $this->$class[$index];
+		
+	}
+	
 	
 	public function generate_serial($obj){
 		
@@ -293,7 +322,7 @@ class Lamusee{
 		
 		
 		//$serial = "LM".$class.sizeof($this->$arrayname)."-".strlen($key_value).rand(000,100);
-		$serial = "LM".$class.sizeof($this->$arrayname);
+		$serial = "LM".$class."-".sizeof($this->$arrayname);
 
 		return $serial;
 		
@@ -381,35 +410,7 @@ class Lamusee{
 	
 	}
 
-	private function parse_database($db){
-		
-		
-		$this->shapes = array();
-		$this->areas = array();
-		
-		global $lmdb;
-		
-		
-		foreach( $lmdb->get_results("SELECT * FROM wp_lamusee_shapes") as $key => $row) {
 
-			$nshape = new Shape($row->shape_name,$row->shape_nice_name,$row->shape_paintings_list);
-			
-			array_push($this->shapes,$nshape);			
-
-		}
-		
-		foreach( $lmdb->get_results("SELECT * FROM wp_lamusee_areas") as $key => $row) {
-			
-							
-			$narea = new Area($row->area_shape_name,$row->area_shape_type,$row->area_nice_name,$row->area_coords,$row->area_painting,$row->area_id);
-			
-			array_push($this->areas,$narea);
-			
-		}
-		
-		
-		
-	}
 	
 	public function parse_painting_areas_with_random_links($post_id){
 		
@@ -436,43 +437,6 @@ class Lamusee{
 	
 	
 	}
-
-	public function getShapeByName($n){
-		
-		foreach ($this->shapes as $shape){
-		
-			if($shape->getName() == $n){
-
-				return $shape;			
-			
-			}	
-			
-		}
-		
-		return false;
-			
-	
-	}
-	
-	public function getShapeByID($id){
-	
-		foreach ($this->shapes as $shape){
-		
-			if($shape->getID() == $id){
-
-				return $shape;			
-			
-			}	
-			
-		}
-		
-		return false;	
-	}
-	
-
-	
-
-	
 
 }
 
@@ -564,28 +528,30 @@ class LMObject
 		
 	}
 	
+	
+	
 	public function get_value_of($propname,$stringoutput=false){
 	
 		$p = $this->properties[$propname];
+
+		$result= $this->$propname;
+		
 		if($p->isArray==true){
 			
-			if(gettype($this->$propname)=="array"){
-				
-				if($stringoutput){
-					return json_encode($this->$propname);
-				}
-				return $this->$propname;
-				
-			}else{
-				
-				return json_decode($this->$propname);
+			if(gettype($result)=="array" && $stringoutput==true){
+
+				$result= json_encode($this->$propname);
 				
 			}
-		}else{
 			
-			return $this->$propname;
 		}
+		
+		return $result;
 
+	}
+	
+	public function set_property_value($pn,$v){
+		$p = $this->properties[$pn];
 	}
 	
 	public function get_properties_string(){
@@ -608,9 +574,7 @@ class LMObject
 		
 	}
 	
-	public function set_property_value($pn,$v){
-		$p = $this->properties[$pn];
-	}
+
 	
 	public function get_values_string(){
 	
@@ -659,6 +623,10 @@ class LMObject
 			}
 			
 			$sql.="UNIQUE KEY id (id));";
+			
+			echo "<br>";
+			print_r($sql);
+			echo "<br>";
 
 			$lmdb->query($sql);
 			
@@ -681,9 +649,10 @@ class LMObject
 		foreach($this->properties as $p){
 			$propname = $p->name;
 			$value = $this->get_value_of($propname,true);
+			$reduced_string = substr($value, 0, 100); 
 			echo '<tr>';
 				echo '<td><b>'.$propname.'  : </b></td>';
-				echo '<td>'.$value.'</td>';
+				echo '<td>'.$reduced_string.'</td>';
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
@@ -778,19 +747,6 @@ class LM_Event extends LMObject
 
 ////**************************************************************  SPACE CLASSES
 
-class point extends LMObject
-{
-	private $x;
-	private $y;
-	
-	public function __construct($x,$y){ 
-	
-		$this->x = $x;
-		$this->y = $y;
-	
-	}
-
-}
 
 class place extends LMObject
 {
@@ -862,6 +818,20 @@ class region extends LMObject
 	public function __construct($param) { 
 	
 		parent::__construct();
+		
+		$this->LMClass = "region";
+	
+		$this->add_property("name","mediumtext");
+		$this->add_property("type","mediumtext");
+		$this->add_property("description","mediumtext");
+		$this->add_property("area","mediumtext");
+		$this->add_property("linked_places","mediumtext","place",true);
+		$this->add_property("linked_regions","mediumtext","region",true);
+		
+		$this->linked_regions = array();
+		$this->linked_places = array();
+		
+		$this->setKeyProperty('name');
 	
 		if(gettype ( $param )== "array"){
 			
@@ -898,19 +868,7 @@ class region extends LMObject
 			
 		}	
 
-		$this->LMClass = "region";
-	
-		$this->add_property("name","mediumtext");
-		$this->add_property("type","mediumtext");
-		$this->add_property("description","mediumtext");
-		$this->add_property("area","mediumtext");
-		$this->add_property("linked_places","mediumtext","place",true);
-		$this->add_property("linked_regions","mediumtext","region",true);
-		
-		$this->linked_regions = array();
-		$this->linked_places = array();
-		
-		$this->setKeyProperty('name');
+
 	}	
 	
 	public function link_region($r){
@@ -945,6 +903,18 @@ class people extends LMObject
 		public function __construct($param) { 
 		
 			parent::__construct();
+			
+			$this->period = array();
+			$this->setKeyProperty('name');
+		
+			$this->LMClass= "people";
+			$this->add_property("name","mediumtext");
+			$this->add_property("period","mediumtext","date",true);
+			$this->add_property("place_of_birth","mediumtext","place");
+			$this->add_property("country","mediumtext","region");
+			$this->add_property("profession","mediumtext");
+			$this->add_property("work_place","mediumtext","place");
+			$this->add_property("biography","mediumtext","text");
 				
 			if(gettype ( $param )== "array"){
 				
@@ -985,16 +955,97 @@ class people extends LMObject
 			}
 
 		
-		$this->setKeyProperty('name');
+
 		
-		$this->LMClass= "people";
-		$this->add_property("name","mediumtext");
-		$this->add_property("period","mediumtext","date",true);
-		$this->add_property("place_of_birth","mediumtext","place");
-		$this->add_property("country","mediumtext","region");
-		$this->add_property("profession","mediumtext");
-		$this->add_property("work_place","mediumtext","place");
-		$this->add_property("biography","mediumtext");
+		
+		
+	}
+
+}
+
+//Picture
+class picture extends LMObject
+{
+	public  $wp_id; 
+	public  $name; 
+	public  $lowres_image_path;
+	public  $width;
+	public  $height;
+	public  $size;
+	public  $highres_image_path;
+	public  $thumbnail_image_path;
+	public  $areas;
+	public  $map_scale;
+	public  $map_offset_x;
+	public  $map_offset_y;
+	public  $dimentions;
+
+
+
+		public function __construct($param) { 
+		
+			parent::__construct();
+
+			$this->setKeyProperty('lowres_image_path');
+			
+
+			$this->LMClass= get_class($this);
+			
+			$this->$areas = array();
+			
+			$this->add_property("name","mediumtext");
+			$this->add_property("wp_id","mediumtext");
+			$this->add_property("lowres_image_path","mediumtext","file");
+			$this->add_property("width","mediumtext");
+			$this->add_property("height","mediumtext");
+			$this->add_property("size","mediumtext");
+			$this->add_property("highres_image_path","mediumtext","file");
+			$this->add_property("thumbnail_image_path","mediumtext","file");
+			$this->add_property("areas","mediumtext","area",true);
+			$this->add_property("map_scale","mediumtext");
+			$this->add_property("map_offset_x","mediumtext");
+			$this->add_property("map_offset_y","mediumtext");
+			$this->add_property("dimensions","mediumtext");
+				
+			echo "NEW PAINTING";
+			
+			if(gettype ( $param )== "array"){
+				
+				foreach($param as $key => $row){
+					
+					$class = get_class($this);
+				
+					if(property_exists ($class,$key)) {
+					
+						if($this->properties[$key]->isArray == true){
+							
+							if(gettype($row)=="array"){
+								
+								$this->$key = $row;
+								
+							}else{
+								
+								$decoded_array = json_decode($row);
+							
+								$this->$key = $decoded_array;	
+								
+							}
+
+						}else{
+							
+							$this->$key = $row;
+							
+						}
+
+				
+					}
+				
+				}			
+				
+			}		
+
+
+
 		
 	}
 
@@ -1003,22 +1054,16 @@ class people extends LMObject
 //Painting
 class painting  extends LMObject
 {
-	public  $id; 
+	public  $wp_id; 
 	public  $name;
 	public  $nice_name;
-	public  $lowres_image;
-	public  $areas;
-	public  $shapes_list;
-	public  $linked_text;
-	public  $map_scale;
-	public  $map_offset_x;
-	public  $map_offset_y;
-	public  $image_highdef;
+	public  $picture;
+	public  $linked_shapes;
+	public  $linked_texts;
 	public  $artiste;
 	public  $titre_du_tableau;
 	public  $technique;
-	public  $date;
-	public  $dimensions;
+	public  $creation_date;
 	public  $lieu_de_conservation;
 	public  $pays;
 	public  $region;
@@ -1028,67 +1073,68 @@ class painting  extends LMObject
 
 		public function __construct($param) { 
 		
-		parent::__construct();
+			parent::__construct();
 
-		$this->setKeyProperty('name');
-		
-		echo "NEW PAINTING";
+			$this->setKeyProperty('name');
+			$this->LMClass= get_class($this);
 			
-		if(gettype ( $param )== "array"){
+			$this->add_property("wp_id","mediumtext");
+			$this->add_property("name","mediumtext");
+			$this->add_property("nice_name","mediumtext");
+			$this->add_property("linked_shapes","mediumtext","shape",true);
+			$this->add_property("picture","mediumtext","picture");
+			$this->add_property("linked_texts","mediumtext","text",true);
+			$this->add_property("artiste","mediumtext","people");
+			$this->add_property("technique","mediumtext","technique");
+			$this->add_property("creation_date","mediumtext","date",true);
+			$this->add_property("lieu_de_conservation","mediumtext","place");
+			$this->add_property("pays","mediumtext","region");
+			$this->add_property("region","mediumtext","region");
+			$this->add_property("artiste2","mediumtext","people");
 			
-			foreach($param as $key => $row){
+			$this->linked_shapes = array();
+			$this->creation_date = array();
+			$this->linked_texts = array();
+			
+			echo "NEW PAINTING";
+			
+			if(gettype ( $param )== "array"){
 				
-				$class = get_class($this);
-			
-				if(property_exists ($class,$key)) {
+				foreach($param as $key => $row){
+					
+					$class = get_class($this);
 				
-					if($this->properties[$key]->isArray == true){
-						
-						if(gettype($row)=="array"){
+					if(property_exists ($class,$key)) {
+					
+						if($this->properties[$key]->isArray == true){
+							
+							if(gettype($row)=="array"){
+								
+								$this->$key = $row;
+								
+							}else{
+								
+								$decoded_array = json_decode($row);
+							
+								$this->$key = $decoded_array;	
+								
+							}
+
+						}else{
 							
 							$this->$key = $row;
 							
-						}else{
-							
-							$decoded_array = json_decode($row);
-						
-							$this->$key = $decoded_array;	
-							
 						}
 
-					}else{
-						
-						$this->$key = $row;
-						
+				
 					}
+				
+				}			
+				
+			}		
 
-			
-				}
-			
-			}			
-			
-		}		
 
-		$this->LMClass= "painting";
-		
-		$this->add_property("id","mediumtext");
-		$this->add_property("name","mediumtext");
-		$this->add_property("nice_name","mediumtext");
-		$this->add_property("areas","mediumtext","area",true);
-		$this->add_property("shapes_list","mediumtext","shape",true);
-		$this->add_property("linked_text","mediumtext","text",true);
-		$this->add_property("map_scale","mediumtext");
-		$this->add_property("map_offset_x","mediumtext");
-		$this->add_property("map_offset_y","mediumtext");
-		$this->add_property("image_highdef","mediumtext");
-		$this->add_property("artiste","mediumtext","people",true);
-		$this->add_property("technique","mediumtext","technique");
-		$this->add_property("date","mediumtext");
-		$this->add_property("dimensions","mediumtext");
-		$this->add_property("lieu_de_conservation","mediumtext","place");
-		$this->add_property("pays","mediumtext","region");
-		$this->add_property("region","mediumtext","region");
-		$this->add_property("artiste2","mediumtext","people");
+
 
 		
 	}
@@ -1096,17 +1142,158 @@ class painting  extends LMObject
 }
 
 
-// Extract
 class text extends LMObject
-
 {
+	public  $wp_id; 
+	public  $name;
+	public  $nice_name;
+	public  $content;
+	public  $author;
+	public  $translator;
+	public  $publishing_date;
+	public  $linked_book;
+
+		public function __construct($param) { 
+		
+			parent::__construct();
+
+			$this->setKeyProperty('name');
+			
+			echo "NEW TEXT";
+			
+			if(gettype ( $param )== "array"){
+				
+				foreach($param as $key => $row){
+					
+					$class = get_class($this);
+				
+					if(property_exists ($class,$key)) {
+					
+						if($this->properties[$key]->isArray == true){
+							
+							if(gettype($row)=="array"){
+								
+								$this->$key = $row;
+								
+							}else{
+								
+								$decoded_array = json_decode($row);
+							
+								$this->$key = $decoded_array;	
+								
+							}
+
+						}else{
+							
+							$this->$key = $row;
+							
+						}
+
+				
+					}
+				
+				}			
+				
+			}		
+
+		$this->LMClass= get_class($this);
+		
+		$this->publishing_date =array();
+		
+		$this->add_property("wp_id","mediumtext");
+		$this->add_property("name","mediumtext");
+		$this->add_property("nice_name","mediumtext");
+		$this->add_property("content","mediumtext");
+		$this->add_property("author","mediumtext","people");
+		$this->add_property("translator","mediumtext","people");
+		$this->add_property("publishing_date","mediumtext","LMdate",true);
+		$this->add_property("linked_book","mediumtext","book");
+
+		$this->publishing_date=array();
+	}
 
 }
 
+
 // BOOK
 class book extends LMObject
-
 {
+	public  $title; 
+	public  $author;
+	public  $publishing_date;
+	public  $linked_texts;
+
+
+
+		public function __construct($param) { 
+		
+			parent::__construct();
+
+			$this->setKeyProperty('title');
+			
+			$this->linked_texts =array();
+			
+			echo "NEW TEXT";
+			
+			if(gettype ( $param )== "array"){
+				
+				foreach($param as $key => $row){
+					
+					$class = get_class($this);
+				
+					if(property_exists ($class,$key)) {
+					
+						if($this->properties[$key]->isArray == true){
+							
+							if(gettype($row)=="array"){
+								
+								$this->$key = $row;
+								
+							}else{
+								
+								$decoded_array = json_decode($row);
+							
+								$this->$key = $decoded_array;	
+								
+							}
+
+						}else{
+							
+							$this->$key = $row;
+							
+						}
+
+				
+					}
+				
+				}			
+				
+			}		
+
+		$this->LMClass= get_class($this);
+		
+		
+		
+		$this->add_property("title","mediumtext");
+		$this->add_property("author","mediumtext","people");
+		$this->add_property("publishing_date","mediumtext","LMdate",true);
+		$this->add_property("linked_texts","mediumtext","text",true);
+		
+		$this->linked_texts = array();
+
+		
+	}
+	
+	public function link_text($t){
+		if($t!=null){
+			
+			if(in_array($t, $this->linked_texts)==false){
+				array_push($this->linked_texts,$t);
+			}
+
+		}
+		
+	}
 
 }
 
@@ -1214,30 +1401,7 @@ class shape extends LMObject{
 		$this->shape_nice_name = $nn;	
 	
 	}
-	
-	public function old_build_table() {
-		
-		global $lmdb;
-  		global $table_name ;
-  		
-  		$table_name = "lamusee_shapes";
 
-		if($lmdb->query("DESCRIBE '$table_name'") == FALSE) 
-		{
-			$sql = "CREATE TABLE " . $table_name . " (
-			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
-			`shape_name` mediumtext NOT NULL,
-			`shape_nice_name` mediumtext NOT NULL,
-			`shape_paintings_list` mediumtext NOT NULL,
-			`shape_creation_date` mediumtext NOT NULL,
-			`shape_last_modification` mediumtext NOT NULL,
-			`shape_clicks` mediumtext NOT NULL,
-			UNIQUE KEY id (id)
-			);";
- 
-			$lmdb->query($sql);
-		}
-	}
 
 }
 
@@ -1337,326 +1501,12 @@ class area extends LMObject{
 		return $HTML;
 		
 	}
-	
-	public function old_build_table() {
-		
-		global $lmdb;
-  		global $table_name ;
-  		
-  		$table_name = "lamusee_areas";
-
-		if($lmdb->query("DESCRIBE '$table_name'") == FALSE) 
-		{
-			$sql = "CREATE TABLE " . $table_name . " (
-			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
-			`area_shape_name` mediumtext NOT NULL,
-			`area_shape_type` mediumtext NOT NULL,
-			`area_nice_name` mediumtext NOT NULL,
-			`area_coords` mediumtext NOT NULL,
-			`area_painting` int NOT NULL,
-			`area_id` mediumtext NOT NULL,
-			UNIQUE KEY id (id)
-			);";
-			$lmdb->query($sql);
-		}
-		
-		
-	}
-	
-	public function transfer_from_old(){
-	
-		
-		
-	}
-
-}
-
-//************************************************************** BIG CLASSES
-
-
-
-class Painting_image extends LMObject
-{
 
 }
 
 
-class LM_article extends LMObject
-{
-	
-}
 
-
-//-------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------
-//------------------------mise a jour de la DB----------------------------------------
-//-------------------------------------------------------------------------------
-
-
-if(!function_exists('get_shape_list')){
-	
-/* Parcours tout les tableaux du site et inspecte leur shapes pour ensuite ajouter l'index du tableau(post_ID) dans les différentes lignes de l'array shape_list.
-voir rajouter une nouvelle ligne si le tableau contient une shape inexistante dans le tableau. 
-
- return array([name(string)][paintings(array)])
- 
- Exemple : [0]["ange"][8,20,11]
- 			  [1]["casque"][12,154,20,9]*/	
-
-	function get_shape_list(){
-		
-		$shape_list = array();
-
-		$query = array( 'post_status' => 'publish','numberposts' => -1 );
-
-		$all_published_posts = get_posts($query);
-		
-		foreach ( $all_published_posts as $post ) {
-			
-			$post_areas_str = get_field('areas',$post->ID);
-			
-			$post_shapes = collect_shapes($post_areas_str);
-			
-			$added_shapes = array();
-			
-			$treated_shapes = array();
-			
-			foreach ( $post_shapes as  $shape ) {
-				
-				$match1 = 0;
-				
-				if(count($shape_list)>0){
-					
-					foreach ( $shape_list as $key => $from_list ) {
-						
-						if($shape == $from_list['name'] && $shape != "" && !isset($treated_shapes[$shape]) ){
-							
-							array_push($shape_list[$key]['paintings'],$post->ID);
-							
-							$match1++;
-							
-							$treated_shapes[$shape] = true;
-
-						}
-				
-					}
-				
-				}
-				
-				if($match1 == 0 && $shape != "" && !isset($treated_shapes[$shape])){
-					
-					$row = array();
-					
-					$row['name']= $shape;
-					
-					$row['paintings'] = array();
-						
-					array_push($row['paintings'],$post->ID);
-						
-					array_push($added_shapes,$row);
-					
-					$treated_shapes[$shape] = true;
-					
-				}
-				
-			}
-				
-			$merged_shape_list = array_merge($shape_list,$added_shapes);
-			
-			$shape_list = $merged_shape_list ;
-				
-		}
-		
-		return $shape_list;
-
-	}
-
-}
-
-
-if(!function_exists('build_shapes_table')){
-	
-	
-	function build_shapes_table(){
-
-		global $lmdb;
-  		global $table_name ;
-  		
-  		$table_name = $lmdb->prefix."lamusee_shapes";
- 
-		// on creer la table "wp_lamusee_shapes" qui renseigne sur le nom des shapes , l'index des tableaux(post_ID) où elles apparaissent et 
-		/*
-			shape_name                :nom de la shape 
-			shape_nice-name           :nom affiché
-			shape_creation_date       :date de creation de la shape
-			shape_last_modification   :date de la dernière modification de la shape (ajout de tableau)
-			shape_paintings_list      :liste des indexes des tableaux(post_ID) où la shape est présente
-			shape_clicks				  :total des clicks sur la shape. 
-
-			
-		
-		
-		
-		*/
-		
-		
-		if($lmdb->get_var("show tables like '$table_name'") != $table_name) 
-		{
-			$sql = "CREATE TABLE " . $table_name . " (
-			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
-			`shape_name` mediumtext NOT NULL,
-			`shape_nice_name` mediumtext NOT NULL,
-			`shape_creation_date` int NOT NULL,
-			`shape_last_modification` int NOT NULL,
-			`shape_paintings_list` mediumtext NOT NULL,
-			`shape_clicks` mediumint(9) NOT NULL,
-			UNIQUE KEY id (id)
-			);";
- 
-			require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-			dbDelta($sql);	
-			
-			
-			$shape_list = get_shape_list();
-		
-				if(count($shape_list)>0){
-					
-					foreach ( $shape_list as $key => $from_list ) {
-						
-						// on convertis la listes des tableaux associés à la shape en string de forme a,b,c,d
-						
-						$serialized_paintings_list = substr(implode(", ", $from_list['paintings']), 0);
-						
-						// on rempli la table wp_lamusee_shapes dans la base de donnée
-
-						$lmdb->insert($table_name,
-    	 						array(
-          						'shape_name'=>$from_list['name'],
-          						'shape_nice_name'=>$from_list['name'],
-          						'shape_creation_date'=>time(),
-          						'shape_last_modification'=>time(),
-          						'shape_paintings_list'=> $serialized_paintings_list,
-          						'shape_clicks'=>0
-     							),
-    	 						array( 
-          						'%s',
-          						'%s',
-          						'%d',
-          						'%d',
-          						'%s',
-          						'%d'
-     							)
-						);
-
-					}
-				
-				}
-				
-			
-		
-		}
-		
-
-		
-		
-		
-		
-	}
-	
-	/*build_shapes_table();
-		$results = $lmdb->get_results("SELECT * FROM wp_lamusee_shapes");
-		print_r($results);*/
-		
-
-}
-
-if(!function_exists('transfer_areas_table')){
-	
-	
-	function transfer_areas_table(){
-
-		global $lmdb;
-  		global $table_name ;
-  		
-  		$table_name = $lmdb->prefix."lamusee_areas";
- 
-		// on creer la table "wp_lamusee_areas" 
-		/*
-			area_shape                :shape associée
-			area_points               :points
-	
-		
-		
-		*/
-		
-		
-		if($lmdb->get_var("show tables like '$table_name'") != $table_name) 
-		{
-			$sql = "CREATE TABLE " . $table_name . " (
-			`id` mediumint(9) NOT NULL AUTO_INCREMENT,
-			`area_shape_name` mediumtext NOT NULL,
-			`area_shape_type` mediumtext NOT NULL,
-			`area_nice_name` mediumtext NOT NULL,
-			`area_coords` mediumtext NOT NULL,
-			`area_painting` int NOT NULL,
-			`area_id` mediumtext NOT NULL,
-			UNIQUE KEY id (id)
-			);";
- 
-			require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-			dbDelta($sql);	
-			
-			$areas_list = get_areas_list();
-			
-			if(count($areas_list)>0){
-				
-				foreach ( $areas_list as $key => $area ) {	
-			
-						$lmdb->insert($table_name,
-    	 						array(
-          						'area_shape_name'=>$area->getShapeName(),
-          						'area_shape_type'=>$area->getShapeType(),
-          						'area_nice_name'=>$area->getNiceName(),
-          						'area_coords'=>$area->getCoords(),
-          						'area_painting'=>$area->getPainting(),
-          						'area_id'=>$area->getID(),
-     							),
-    	 						array( 
-          						'%s',
-          						'%s',
-          						'%s',
-          						'%s',
-          						'%s',
-          						'%s'
-     							)
-						);					
-			
-				}
-				
-			}
-		
-		}
-		
-
-		
-		
-		
-		$results = $lmdb->get_results("SELECT * FROM wp_lamusee_areas");
-		//print_r($results);
-		
-		
-	}
-	
-	
-	//build_areas_table();
-
-
-}
-
-
-/*    UTILS ________ */
-
-
+/******************************************/
 
 function romanCenturyToYear($str){
 
