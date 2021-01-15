@@ -8,12 +8,15 @@ include "LAMUSEE_DBconnect.php";
 
 // //************************************************************** MOTHER CLASS
 
+/*
+realy need to cut this classes in separate files
+
+// and hashing the feilds 
+
+store properties un database
+*/
+
 global $lmdb; 
-
-
-
-
-
 
 
 class Lamusee{
@@ -21,18 +24,17 @@ class Lamusee{
 	public $shapes;
 	public $areas;
 	public $paintings;
-	public $picture;
+	public $pictures;
 	public $texts;
 	public $books;
-	public $artists;
 	public $peoples;
 	public $dates;
-	public $periods;
 	public $places;
-	public $points;
 	public $regions;
-	public $articles;
-	
+	public $LMobjects;
+	public $messagelogs;
+
+
 	
 	public $LMtables; 
 	
@@ -44,14 +46,12 @@ class Lamusee{
 		$this->paintings = array();
 		$this->pictures = array();
 		$this->texts = array();
-		$this->artists = array();	
 		$this->peoples = array();	
 		$this->dates = array();	
 		$this->places = array();	
-		$this->periodes = array();	
 		$this->regions = array();	
-		$this->articles = array();
 		$this->books = array();
+		$this->messagelogs = array();
 
 	
 	}
@@ -62,6 +62,8 @@ class Lamusee{
 		
 			
 	}
+	
+
 	
 	
 	public function load_tables(){
@@ -87,6 +89,8 @@ class Lamusee{
 		$this->load_table($picture);
 		$this->load_table($text);
 		$this->load_table($book);
+		
+
 
 				
 		
@@ -108,17 +112,63 @@ class Lamusee{
 		$book = new book(array());
 		$text = new text(array());
 
-		$picture->build_table();
-		$people->build_table();
-		$shape->build_table();
-		$area->build_table();
-		$place->build_table();
-		$region->build_table();
-		$painting->build_table();
-		$book->build_table();
-		$text->build_table();
+		$this->build_table($picture);
+		$this->build_table($people);
+		$this->build_table($shape);
+		$this->build_table($area);
+		$this->build_table($place);
+		$this->build_table($region);
+		$this->build_table($painting);
+		$this->build_table($book);
+		$this->build_table($text);
 
 	}
+	
+	
+	public function build_table($obj) {
+		
+		global $lmdb;
+		
+		if($lmdb == null){
+			
+			$lmdb = OpenLamuseeDB();
+		}
+		
+  		$table_name = "lamusee_".$obj->LMClass."s";
+
+		if($lmdb->query("DESCRIBE '$table_name'") == FALSE) 
+		{
+			
+			$sql = "CREATE TABLE " . $table_name . " (`id` mediumint(9) NOT NULL AUTO_INCREMENT,";
+			
+			foreach ($obj->properties as $p){
+				
+				echo "____".$p->name."_____";
+				
+				$sql.="`".$p->name."` ".$p->type." NOT NULL,";
+			
+			}
+			
+			$sql.="UNIQUE KEY id (id));";
+			
+			echo "<br>";
+			print_r($sql);
+			echo "<br>";
+
+			if($lmdb->query($sql)!=false){
+					
+					$log = "new table added to DB ".$table_name;
+								
+					
+			}else{
+				
+				$log = "QUERY ".$sql."  FAILED !";
+			}
+				
+			$this->add_log($log);
+			
+		}
+	}	
 	
 	public function update_tables(){
 		
@@ -184,10 +234,12 @@ class Lamusee{
 			$o->display_in_html();
 		}		
 	}
+
 	
 	public function update_table($obj){
 		
 		global $lmdb;
+		
 		$lmdb = OpenLamuseeDB();
 		
 		$class = get_class($obj);
@@ -203,19 +255,108 @@ class Lamusee{
 			$sql = "SELECT * FROM ".$table_name." WHERE LMID = '".$o->LMID."'";
 			
 			$result = $lmdb->query($sql);
+
 			
 			if ($result->num_rows > 0) {
+				
+				// if the lmobjects exist in the db 
 
-			  while($row = $result->fetch_assoc()) {
-				  
-				 "<br>-------EXIST IN DB------<br>";
-				
-				$params = $row;
-				//$lm->loadObject($class,$params);
-				
-				// we update the modified entries 
-				
-			  }
+				  while($row = $result->fetch_assoc()) {
+					  
+					 echo "<br>-------EXIST IN DB------<br>";
+					 
+					 // compare properties 
+					 
+					$SET_string ="";
+					
+					$Old_values = "";
+					
+					$dontmatch = 0;
+					
+					$db_params = $row;
+					
+					//convert db datas to proper types (json to array ect...)
+					$loaded_lmobject = $this->preloadObject($class,$db_params);
+					 
+					foreach ($loaded_lmobject->properties as $p){
+						
+
+						
+						$p_name = $p->name;
+						
+						 echo "<br>";
+						 echo $o->$p_name.'    '.$loaded_lmobject->$p_name;
+						 echo "<br>";
+						 echo "<br>";
+						 
+						 $i = 0;
+						 
+						 $separator = " ";
+						 
+						 // we compare every properties values except LMtimestamp because the LMtimestamps will always be different
+						 if($o->$p_name != $loaded_lmobject->$p_name && $p_name != "LMtimestamp"){
+							 
+							if($dontmatch > 0 ){
+								$separator = " , ";
+							}
+							 
+							$SET_string.=$separator.$o->get_property_sql_SET_string($p_name); //generate a string in form of "property = value";
+							
+							$Old_values.=$separator.$loaded_lmobject->get_property_sql_SET_string($p_name);
+							
+							$dontmatch++;
+							
+						 }
+						 
+						
+					 }
+					 
+					if($dontmatch>0){
+						
+						
+						
+						// we update the DB entry
+						
+						//we then update the LMtimestamp 
+						$SET_string.=", LMtimestamp = '".$o->LMtimestamp."'";
+					
+						 
+						$sql ="UPDATE ".$table_name." SET ".$SET_string." WHERE LMID = '".$o->LMID."'";
+						
+						echo '<br> number of properties to update : ';
+						print_r($dontmatch);
+						echo '<br>';
+						echo '<br> UPDATE SQL :::::';
+						print_r($sql);
+						echo '<br>';	
+						
+						$log = "LMObject updated in db :".$o->LMID." ".$o->getKeyPropertyValue()." old values (".$Old_values.") new values (".$SET_string.")";
+						$this->add_log($log);
+						
+						if($lmdb->query($sql)!=false){
+							
+							$log = "LMObject updated in db :".$o->LMID." ".$o->getKeyPropertyValue()." old values (".$Old_values.") new values (".$SET_string.")";
+										
+							
+						}else{
+							
+							$log = "QUERY ".$sql."  FAILED !";
+						}
+						
+						$this->add_log($log);
+						
+						
+					}else{
+						
+						echo '<br> no properties to update ';
+						
+					}
+
+					 
+
+
+					
+				  }
 				
 			 }else {
 				
@@ -231,7 +372,18 @@ class Lamusee{
 				print_r($sql);
 				echo '<br>';
 				
-				$lmdb->query($sql);			 
+				if($lmdb->query($sql)!=false){
+					
+						$log = "new LMObject added to db :".$o->LMID." ".$o->getKeyPropertyValue();
+					
+				}else{
+							
+						$log = "QUERY ".$sql."  FAILED !";
+				}
+						
+				$this->add_log($log);
+
+				
 			}
 
 		}
@@ -259,6 +411,8 @@ class Lamusee{
 			$this->loadObject($class,$params);
 			
 		}
+		
+		$this->add_log($sql);
 
 		
 		
@@ -303,7 +457,13 @@ class Lamusee{
 		$class = substr($explode[0],2);
 		$index = $explode[1];
 		
-		return $this->$class[$index];
+		if (array_key_exists($index, $this->$class)) {
+		
+			return $this->$class[$index];
+		
+		}
+		
+		return false;
 		
 	}
 	
@@ -345,11 +505,12 @@ class Lamusee{
 		
 		$LMID = $serialnumber;
 		
-		$nObj->timestamp = time();
+		$nObj->LMtimestamp = time();
 		
 		$nObj->setLMID($LMID);
 		
 		array_push($this->$arrayname,$nObj);	
+		array_push($this->LMobjects,$nObj);	
 			
 		return $nObj;
 
@@ -362,16 +523,19 @@ class Lamusee{
 		$arrayname = $LMClass."s";
 		$nObj = new $LMClass($properties);
 		
-		$objmatch = $this->alreadyExist($nObj);
-		
-		//if ($objmatch==false){
-
 		array_push($this->$arrayname,$nObj);	
 			
-		//}else{
-			
-			
-		//}
+	}
+	
+	public function preloadObject($LMClass,$properties){
+		
+		// warning this function does not check for duplicates before pushing
+		
+		$arrayname = $LMClass."s";
+		//the constructor of the LMclass eventualy decode json arrays 
+		$nObj = new $LMClass($properties);
+		
+		return 	$nObj;
 			
 	}
 	
@@ -437,6 +601,41 @@ class Lamusee{
 	
 	
 	}
+	
+	// LOG
+	
+	
+	public function add_log($str){
+		
+		array_push($this->messagelogs,$str);
+	}
+	
+	public function get_log_txt(){
+		
+		$str = "";
+		
+		foreach($this->messagelogs as $log){
+			
+			$str.="\n".$log;
+		}
+		
+		
+		return $str;
+	}
+	
+	public function get_log_html(){
+		
+		$str = "";
+		
+		foreach($this->messagelogs as $log){
+			
+			$str.="<br>".$log;
+		}
+		
+		
+		return $str;		
+
+	}
 
 }
 
@@ -469,7 +668,7 @@ class LMObject
 	public $properties;
 	public $LMClass;
 	public $KeyProperty;
-	public $timestamp;
+	public $LMtimestamp;
 	
 	
 	public function __construct(){ 
@@ -478,7 +677,7 @@ class LMObject
 		$this->properties = array();
 		$this->LMClass = "LMObject"; 
 		$this->add_property("LMID","mediumtext");
-		$this->add_property("timestamp","mediumtext");
+		$this->add_property("LMtimestamp","mediumtext");
 
 		//par default 
 		$this->setKeyProperty("LMID");
@@ -498,6 +697,13 @@ class LMObject
 		$this->KeyProperty = $kp;
 		
 	}
+	public function getKeyPropertyValue(){
+		
+		$kp = $this->KeyProperty;
+		return $this->$kp;
+		
+	}
+	
 	
 	public function property_exist($pn){
 	
@@ -544,9 +750,15 @@ class LMObject
 				
 			}
 			
+		}else{
+			
+			$result = addslashes($result);
+			
 		}
 		
+		
 		return $result;
+		
 
 	}
 	
@@ -596,42 +808,59 @@ class LMObject
 		return $str;
 		
 	}
-		
 	
-	public function build_table() {
-		
-		global $lmdb;
-		
-		if($lmdb == null){
+	
+	public function get_sql_SET_string(){
+	
+		$str = "";
+
+		foreach($this->properties as $p){
 			
-			$lmdb = OpenLamuseeDB();
+			$p_name = $p->name;
+			
+			$v= $this->get_value_of($p_name,true);
+			
+			$equality = $this->get_property_sql_SET_string($p_name);
+
+			$str.=$equality;
+
 		}
 		
-  		$table_name = "lamusee_".$this->LMClass."s";
+		return $str;
+		
+	}
+	
+	public function get_property_sql_SET_string($prop){
+	
+		$str = "";
 
-		if($lmdb->query("DESCRIBE '$table_name'") == FALSE) 
-		{
+		$p_name = $prop;
 			
-			$sql = "CREATE TABLE " . $table_name . " (`id` mediumint(9) NOT NULL AUTO_INCREMENT,";
+		$v= $this->get_value_of($p_name,true);
 			
-			foreach ($this->properties as $p){
-				
-				echo "____".$p->name."_____";
-				
-				$sql.="`".$p->name."` ".$p->type." NOT NULL,";
-			
-			}
-			
-			$sql.="UNIQUE KEY id (id));";
-			
-			echo "<br>";
-			print_r($sql);
-			echo "<br>";
+		$equality = " ".$p_name." = '".$v."' ";
 
-			$lmdb->query($sql);
-			
-		}
+		$str=$equality;
+
+		return $str;
+		
+	}
+		
+		
+	public function get_json_properties(){
+	
+		return json_encode($this->properties);
+		
 	}	
+	
+	public function update_properties($params){
+		
+		
+		
+	}
+	
+	
+
 	
 	
 	public function display_in_html(){
@@ -666,14 +895,6 @@ class LMObject
 }
 
 
-class LMName extends LMObject
-{
-	
-	
-
-}
-
-
 //  //************************************************************** TIME CLASSES
 
 
@@ -694,57 +915,6 @@ class LMdate extends LMObject
 
 
 
-class period extends LMObject
-{
-
-	private $name;
-	private $begining_date;
-	private $end_date;
-	private $format;
-	
-	public function __construct($name,$begining_date,$end_date,$format){ 
-	
-		$this->setKeyProperty('name');
-	
-		$this->name = $name;
-		$this->begining_date = $begining_date;
-		$this->end_date = $end_date;
-		$this->formate = $format;
-		
-		$this->table = "period";
-		
-		$this->add_property("name","mediumtext");
-		$this->add_property("begining_date","mediumtext");
-	
-	}
-
-    public function check_date() {
-        
-    }
-	
-}
-
-class LM_Event extends LMObject
-{
-
-	private $name;
-	private $event_date;
-	
-	public function __construct($name,$event_date){ 
-	
-		$this->name = $name;
-		$this->event_date = $event_date;
-		
-		$this->setKeyProperty('event_date');
-	
-	}
-	
-	
-}
-
-
-
-
 ////**************************************************************  SPACE CLASSES
 
 
@@ -757,6 +927,12 @@ class place extends LMObject
 	public function __construct($param) { 
 	
 		parent::__construct();
+
+		$this->LMClass = "place";
+	
+		$this->add_property("name","mediumtext");
+		$this->add_property("coords","mediumtext");	
+		$this->setKeyProperty('name');
 	
 		if(gettype ( $param )== "array"){
 			
@@ -793,11 +969,6 @@ class place extends LMObject
 			
 		}	
 
-		$this->LMClass = "place";
-	
-		$this->add_property("name","mediumtext");
-		$this->add_property("coords","mediumtext");	
-		$this->setKeyProperty('name');
 		
 	}
 	
@@ -968,12 +1139,12 @@ class picture extends LMObject
 {
 	public  $wp_id; 
 	public  $name; 
-	public  $lowres_image_path;
+	public  $file_path;
 	public  $width;
 	public  $height;
 	public  $size;
-	public  $highres_image_path;
 	public  $thumbnail_image_path;
+	public  $highres_image;
 	public  $areas;
 	public  $map_scale;
 	public  $map_offset_x;
@@ -986,7 +1157,7 @@ class picture extends LMObject
 		
 			parent::__construct();
 
-			$this->setKeyProperty('lowres_image_path');
+			$this->setKeyProperty('file_path');
 			
 
 			$this->LMClass= get_class($this);
@@ -995,17 +1166,17 @@ class picture extends LMObject
 			
 			$this->add_property("name","mediumtext");
 			$this->add_property("wp_id","mediumtext");
-			$this->add_property("lowres_image_path","mediumtext","file");
+			$this->add_property("file_path","mediumtext","file");
 			$this->add_property("width","mediumtext");
 			$this->add_property("height","mediumtext");
 			$this->add_property("size","mediumtext");
-			$this->add_property("highres_image_path","mediumtext","file");
 			$this->add_property("thumbnail_image_path","mediumtext","file");
 			$this->add_property("areas","mediumtext","area",true);
 			$this->add_property("map_scale","mediumtext");
 			$this->add_property("map_offset_x","mediumtext");
 			$this->add_property("map_offset_y","mediumtext");
 			$this->add_property("dimensions","mediumtext");
+			$this->add_property("highres_image","mediumtext","picture");
 				
 			echo "NEW PAINTING";
 			
@@ -1051,13 +1222,13 @@ class picture extends LMObject
 
 }
 
-//Painting
+//class Painting
 class painting  extends LMObject
 {
 	public  $wp_id; 
 	public  $name;
 	public  $nice_name;
-	public  $picture;
+	public  $pictures;
 	public  $linked_shapes;
 	public  $linked_texts;
 	public  $artiste;
@@ -1082,7 +1253,7 @@ class painting  extends LMObject
 			$this->add_property("name","mediumtext");
 			$this->add_property("nice_name","mediumtext");
 			$this->add_property("linked_shapes","mediumtext","shape",true);
-			$this->add_property("picture","mediumtext","picture");
+			$this->add_property("pictures","mediumtext","picture",true);
 			$this->add_property("linked_texts","mediumtext","text",true);
 			$this->add_property("artiste","mediumtext","people");
 			$this->add_property("technique","mediumtext","technique");
@@ -1156,6 +1327,21 @@ class text extends LMObject
 		public function __construct($param) { 
 		
 			parent::__construct();
+			
+			$this->LMClass= get_class($this);
+			
+			$this->publishing_date =array();
+			
+			$this->add_property("wp_id","mediumtext");
+			$this->add_property("name","mediumtext");
+			$this->add_property("nice_name","mediumtext");
+			$this->add_property("content","mediumtext");
+			$this->add_property("author","mediumtext","people");
+			$this->add_property("translator","mediumtext","people");
+			$this->add_property("publishing_date","mediumtext","LMdate",true);
+			$this->add_property("linked_book","mediumtext","book");
+
+			$this->publishing_date=array();
 
 			$this->setKeyProperty('name');
 			
@@ -1196,20 +1382,7 @@ class text extends LMObject
 				
 			}		
 
-		$this->LMClass= get_class($this);
-		
-		$this->publishing_date =array();
-		
-		$this->add_property("wp_id","mediumtext");
-		$this->add_property("name","mediumtext");
-		$this->add_property("nice_name","mediumtext");
-		$this->add_property("content","mediumtext");
-		$this->add_property("author","mediumtext","people");
-		$this->add_property("translator","mediumtext","people");
-		$this->add_property("publishing_date","mediumtext","LMdate",true);
-		$this->add_property("linked_book","mediumtext","book");
 
-		$this->publishing_date=array();
 	}
 
 }
@@ -1229,9 +1402,18 @@ class book extends LMObject
 		
 			parent::__construct();
 
+			
+			$this->LMClass= get_class($this);
+
+			
+			$this->add_property("title","mediumtext");
+			$this->add_property("author","mediumtext","people");
+			$this->add_property("publishing_date","mediumtext","LMdate",true);
+			$this->add_property("linked_texts","mediumtext","text",true);
+			
 			$this->setKeyProperty('title');
 			
-			$this->linked_texts =array();
+			$this->linked_texts = array();
 			
 			echo "NEW TEXT";
 			
@@ -1270,16 +1452,6 @@ class book extends LMObject
 				
 			}		
 
-		$this->LMClass= get_class($this);
-		
-		
-		
-		$this->add_property("title","mediumtext");
-		$this->add_property("author","mediumtext","people");
-		$this->add_property("publishing_date","mediumtext","LMdate",true);
-		$this->add_property("linked_texts","mediumtext","text",true);
-		
-		$this->linked_texts = array();
 
 		
 	}
@@ -1316,6 +1488,18 @@ class shape extends LMObject{
 	public function __construct($param) { 
 	
 		parent::__construct();
+		
+		
+		$this->LMClass = "shape";
+		
+		//to be serialised
+		$this->shape_paintings_list = array();
+	
+		$this->add_property("shape_name","mediumtext");
+		$this->add_property("shape_nice_name","mediumtext");
+		$this->add_property("shape_paintings_list","mediumtext","painting",true);
+		
+		$this->setKeyProperty("shape_name");
 	
 		if(gettype ( $param )== "array"){
 			
@@ -1356,18 +1540,7 @@ class shape extends LMObject{
 		}		
 
 		
-		
-		$this->LMClass = "shape";
-		
-		$this->setKeyProperty("shape_name");
-		
-		
-		//to be serialised
-		$this->shape_paintings_list = array();
-	
-		$this->add_property("shape_name","mediumtext");
-		$this->add_property("shape_nice_name","mediumtext");
-		$this->add_property("shape_paintings_list","mediumtext","painting",true);
+
 		
 	
 	}
@@ -1410,6 +1583,7 @@ class area extends LMObject{
 	
 	public  $area_shape_name;
 	public  $area_shape_type;
+	public  $area_shape; // to link the area to a shape with LMID 
 	public  $area_nice_name;
 	public  $area_coords;
 	public  $area_painting;
@@ -1419,6 +1593,20 @@ class area extends LMObject{
 	public function __construct($param) { 
 	
 		parent::__construct();
+
+		$this->LMClass = "area";
+		
+		//attention a ne pas mettre d'espaces dans les string!! cela donne une erreur SQL "
+		
+		$this->add_property("area_shape_name","mediumtext");
+		$this->add_property("area_shape_type","mediumtext");
+		$this->add_property("area_shape","mediumtext","shape");
+		$this->add_property("area_nice_name","mediumtext");
+		$this->add_property("area_coords","mediumtext");
+		$this->add_property("area_painting","int");
+		$this->add_property("area_id","mediumtext");
+		
+		$this->setKeyProperty("area_id");
 			
 		if(gettype ( $param )== "array"){
 			
@@ -1458,17 +1646,6 @@ class area extends LMObject{
 			
 		}		
 
-
-		$this->LMClass = "area";
-		
-		//attention a ne pas mettre d'espaces dans les string!! cela donne une erreur SQL "
-		
-		$this->add_property("area_shape_name","mediumtext");
-		$this->add_property("area_shape_type","mediumtext");
-		$this->add_property("area_nice_name","mediumtext");
-		$this->add_property("area_coords","mediumtext");
-		$this->add_property("area_painting","int");
-		$this->add_property("area_id","mediumtext");
 	
 	}
 	
