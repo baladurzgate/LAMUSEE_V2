@@ -32,7 +32,7 @@ $all_published_posts = get_posts($query);
 
 
  $lm->create_tables();
- $lm->load_tables();
+ //$lm->load_tables();
 
 	
 ?>
@@ -161,19 +161,7 @@ foreach ( $all_published_posts as $post ) {
 					$area_params['area_painting'] =  $post->ID;
 					// for the moment area will have their own id system 
 					$area_params['area_id'] =  $post->ID.$area_params['area_shape_name'].$count;
-					
-					
 
-					
-					
-					//adding for the first time
-					$new_area = $lm->addObject('area',$area_params);
-					
-					array_push($areas_id_list,$new_area->LMID);
-					
-					$count++;
-					
-					
 					// SHAPE 
 					
 						/*public $shape_ID;
@@ -192,25 +180,41 @@ foreach ( $all_published_posts as $post ) {
 					$shape_params["shape_nice_name"] = $area_tags->getAttribute('title');
 					$shape_params["shape_ID"] = $area_tags->getAttribute('alt').$post->ID;
 					
+					
 					$test_shape = new shape($shape_params);
 					
 					$stored_shape = $lm->alreadyExist($test_shape);
 					
-					
+					$found_shape ="";
+			
 					if($stored_shape == false){
 						
 						$new_shape = $lm->addObject('shape',$shape_params);
 						
-						array_push($shapes_id_list,$new_shape->LMID);
+						$found_shape = $new_shape;
+						
 						
 					}else{
 						
-						$stored_shape->add_painting($post->ID);
+						$stored_shape->add_painting($post->ID); //we link the wp_id to the shape
 						
-						array_push($shapes_id_list,$stored_shape->LMID);
+						$found_shape = $stored_shape;
+
 						
 					}
 					
+					array_push($shapes_id_list,$found_shape->LMID);
+					
+					
+					
+					$area_params['area_shape'] = $found_shape->LMID;
+					
+					//adding for the first time
+					$new_area = $lm->addObject('area',$area_params);
+
+					$count++;
+					
+					array_push($areas_id_list,$new_area->LMID);
 				
 				}
 				
@@ -229,7 +233,7 @@ foreach ( $all_published_posts as $post ) {
 				
 				$this->add_property("name","mediumtext");
 				$this->add_property("wp_id","mediumtext");
-				$this->add_property("lowres_image_path","mediumtext","file");
+				$this->add_property("file_path","mediumtext","file");
 				$this->add_property("highres_image_path","mediumtext","file");
 				$this->add_property("thumbnail_image_path","mediumtext","file");
 				$this->add_property("areas","mediumtext","area",true);
@@ -239,6 +243,50 @@ foreach ( $all_published_posts as $post ) {
 				$this->add_property("dimensions","mediumtext");
 				
 				*/
+				
+				//HIGH REZ
+		
+				$highres_image_field = get_field('image_highdef',$post->ID);
+				
+				echo'<br>';
+				print_r($highres_image_field);
+				echo'<br>';	
+				
+				$hr_picture_params = array();
+				
+				$hr_picture_params['name'] = $highres_image_field['filename'];
+				$hr_picture_params['wp_id'] = $highres_image_field['ID'];
+				$hr_picture_params['file_path'] = $highres_image_field['url'];
+				$hr_picture_params['thumbnail_image_path'] = $highres_image_field['sizes']['thumbnail'];
+				$hr_picture_params['width'] = $highres_image_field['width'];
+				$hr_picture_params['height'] = $highres_image_field['height'];
+				$hr_picture_params['size'] = $highres_image_field['filesize'];
+				$hr_picture_params['areas'] = array();
+				$hr_picture_params['map_scale'] = 0;
+				$hr_picture_params['map_offset_x'] = 0;
+				$hr_picture_params['map_offset_y'] = 0;
+				$hr_picture_params['dimensions'] = 0;
+				$hr_picture_params['"highres_image"'] = "";
+				
+				$test_picture = new picture($hr_picture_params);
+				
+				$stored_picture = $lm->alreadyExist($test_picture);
+				
+				$hr_found_id = "";
+				
+				if($stored_picture==true){
+					
+					$hr_found_id = $stored_picture->LMID;
+					
+					
+				}else{
+					
+					$new_picture = $lm->addObject("picture",$picture_params);
+					$hr_found_id = $new_picture->LMID;
+					
+				}
+				
+				//LOW RES (parent of the high res) 
 				
 				$lowres_image_field = get_field('lowres_image',$post->ID);
 				
@@ -250,7 +298,7 @@ foreach ( $all_published_posts as $post ) {
 				
 				$picture_params['name'] = $lowres_image_field['filename'];
 				$picture_params['wp_id'] = $lowres_image_field['ID'];
-				$picture_params['lowres_image_path'] = $lowres_image_field['url'];
+				$picture_params['file_path'] = $lowres_image_field['url'];
 				$picture_params['thumbnail_image_path'] = $lowres_image_field['sizes']['thumbnail'];
 				$picture_params['width'] = $lowres_image_field['width'];
 				$picture_params['height'] = $lowres_image_field['height'];
@@ -260,21 +308,31 @@ foreach ( $all_published_posts as $post ) {
 				$picture_params['map_offset_x'] = get_field('map_offset_x',$post->ID);
 				$picture_params['map_offset_y'] = get_field('map_offset_y',$post->ID);
 				$picture_params['dimensions'] = get_field('dimensions',$post->ID);
+				$hr_picture_params['"highres_image"'] = $hr_found_id; // connexion with the high res image
 				
 				$test_picture = new picture($picture_params);
 				
 				$stored_picture = $lm->alreadyExist($test_picture);
 				
+				$picture_found_id = "";
+				
 				if($stored_picture==true){
 					
-					$painting_params['picture'] = $stored_picture->LMID;
-					
+
+					$picture_found_id= $stored_picture->LMID;
+	
 				}else{
 					
 					$new_picture = $lm->addObject("picture",$picture_params);
-					$painting_params['picture'] = $new_picture->LMID;
+					$picture_found_id = $new_picture->LMID;
+					
 				}
 				
+				$pictures_array = array();
+							
+				array_push($pictures_array,$picture_found_id);
+				
+				$painting_params['pictures'] = $pictures_array;
 
 				// ARTISTE
 
@@ -484,48 +542,53 @@ foreach ( $all_published_posts as $post ) {
 				
 				$linked_texts = array();
 				
-				foreach($linked_texts_field as $wp_text){
-					
-					$text_post_id = $wp_text->ID;
-					
-					$text_params = array();
-					$text_params['wp_id'] = $wp_text->ID;				
-					$text_params['name'] = $wp_text->post_name;				
-					$text_params['content'] = $wp_text->post_content;		
-
-					//AUTHOR
-
-
-					$author_params = array();
-					$author_params['name'] = get_field('author',$text_post_id );	
-					$text_params['author'] =$lm->add_or_call_object('people',$author_params);
-
-					
-					//TRANSLATOR
+				if(gettype($linked_texts_field)=="array"){
 				
+					foreach($linked_texts_field as $wp_text){
+						
+						$text_post_id = $wp_text->ID;
+						
+						$text_params = array();
+						$text_params['wp_id'] = $wp_text->ID;				
+						$text_params['name'] = $wp_text->post_name;				
+						//$text_params['content'] = addslashes($wp_text->post_content);		
+						$text_params['content'] = addslashes($wp_text->post_content);		
 
-					$translator_params = array();
-					$translator_params['name'] = get_field('traductor',$text_post_id );	
-					$text_params['translator'] = $lm->add_or_call_object('people',$translator_params);
-					
-
-					$text_params['publishing_date'] = extract_date(get_field('publishing_date',$text_post_id ));	
+						//AUTHOR
 
 
-					//LINKED_BOOK
+						$author_params = array();
+						$author_params['name'] = get_field('author',$text_post_id );	
+						$text_params['author'] =$lm->add_or_call_object('people',$author_params);
+
+						
+						//TRANSLATOR
 					
-					$book_params = array();
-					$book_params['title'] = get_field('book_title',$text_post_id );
-					$book_params['author'] = $text_params['author'];
-					$called_book = $lm->add_or_call_object('book',$book_params,true);	
-					$text_params['linked_book'] =$called_book->LMID;	
-					
-					$called_text = $lm->add_or_call_object('text',$text_params,true);	
-					
-					$called_book->link_text($called_text->LMID);
-					
-					array_push($linked_texts,$called_text->LMID);
-					
+
+						$translator_params = array();
+						$translator_params['name'] = get_field('traductor',$text_post_id );	
+						$text_params['translator'] = $lm->add_or_call_object('people',$translator_params);
+						
+
+						$text_params['publishing_date'] = extract_date(get_field('publishing_date',$text_post_id ));	
+
+
+						//LINKED_BOOK
+						
+						$book_params = array();
+						$book_params['title'] = get_field('book_title',$text_post_id );
+						$book_params['author'] = $text_params['author'];
+						$called_book = $lm->add_or_call_object('book',$book_params,true);	
+						$text_params['linked_book'] =$called_book->LMID;	
+						
+						$called_text = $lm->add_or_call_object('text',$text_params,true);	
+						
+						$called_book->link_text($called_text->LMID);
+						
+						array_push($linked_texts,$called_text->LMID);
+						
+					}
+				
 				}
 
 				$painting_params['linked_texts'] =$linked_texts;			
@@ -547,6 +610,8 @@ $lm-> update_tables();
 
  
 $lm-> display_tables();
+
+echo $lm->get_log_html();
 
 // SECOND LEVEL THROUGH OBJECTS COMMON TO SEVERAL PAINTINGS (SHAPES, AUTHOR, ect...)
 
