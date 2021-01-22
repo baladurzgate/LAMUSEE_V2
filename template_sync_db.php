@@ -1,40 +1,18 @@
 <?php /* Template Name: SYNC*/ get_header(); ?>
 
-<?php require_once "classes/LAMUSEE_Class.php"; ?>
+<?php require_once "Lamuseev2/lamuseeV2_main.php"; ?>
 <?php 
 
 echo "Class test";
 
-
-$lm; 
 $lm = new Lamusee();
-
-//$lm->create_tables();
-
-$shape_list = get_shape_list();
-
-$people_list = ""; 
-
-
-function compareByName($a, $b) {
-	return strcmp($a["name"], $b["name"]);
-}
-//usort($shape_list, 'compareByName');
-
-$a = 0;
-
-// would be nice to have them by creation dates 
 
 $query = array( 'post_status' => 'publish','numberposts' => 20);
 
 $all_published_posts = get_posts($query);
 
+$lm->create_tables();
 
-
- $lm->create_tables();
- //$lm->load_tables();
-
-	
 ?>
 
 	
@@ -248,7 +226,7 @@ foreach ( $all_published_posts as $post ) {
 		
 				$highres_image_field = get_field('image_highdef',$post->ID);
 				
-				echo'<br>';
+				echo'<br>HIGHREZ';
 				print_r($highres_image_field);
 				echo'<br>';	
 				
@@ -266,25 +244,29 @@ foreach ( $all_published_posts as $post ) {
 				$hr_picture_params['map_offset_x'] = 0;
 				$hr_picture_params['map_offset_y'] = 0;
 				$hr_picture_params['dimensions'] = 0;
-				$hr_picture_params['"highres_image"'] = "";
+				$hr_picture_params['highres_image'] = "";
 				
-				$test_picture = new picture($hr_picture_params);
+				$test_hr_picture = new picture($hr_picture_params);
 				
-				$stored_picture = $lm->alreadyExist($test_picture);
+				$stored_hr_picture = $lm->alreadyExist($test_hr_picture);
 				
 				$hr_found_id = "";
 				
-				if($stored_picture==true){
+				if($stored_hr_picture==true){
 					
-					$hr_found_id = $stored_picture->LMID;
+					$hr_found_id = $stored_hr_picture->LMID;
 					
 					
 				}else{
 					
-					$new_picture = $lm->addObject("picture",$picture_params);
-					$hr_found_id = $new_picture->LMID;
+					$new_hr_picture = $lm->addObject("picture",$hr_picture_params);
+					$hr_found_id = $new_hr_picture->LMID;
 					
 				}
+				
+				echo'<br> hr_found_id ******************************';
+				print_r($hr_found_id);
+				echo'<br>';				
 				
 				//LOW RES (parent of the high res) 
 				
@@ -308,7 +290,7 @@ foreach ( $all_published_posts as $post ) {
 				$picture_params['map_offset_x'] = get_field('map_offset_x',$post->ID);
 				$picture_params['map_offset_y'] = get_field('map_offset_y',$post->ID);
 				$picture_params['dimensions'] = get_field('dimensions',$post->ID);
-				$hr_picture_params['"highres_image"'] = $hr_found_id; // connexion with the high res image
+				$picture_params['highres_image'] = $hr_found_id; // connexion with the high res image
 				
 				$test_picture = new picture($picture_params);
 				
@@ -608,10 +590,10 @@ foreach ( $all_published_posts as $post ) {
  
 $lm-> update_tables();
 
- 
 $lm-> display_tables();
 
 echo $lm->get_log_html();
+$lm->save_log();
 
 // SECOND LEVEL THROUGH OBJECTS COMMON TO SEVERAL PAINTINGS (SHAPES, AUTHOR, ect...)
 
