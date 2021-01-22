@@ -2,8 +2,7 @@
 //IMPORT CLASSES ! 
 global $lmdb; 
 
-include "control/LAMUSEE_DBconnect.php";
-
+require_once "model/LAMUSEE_DBconnect.php";
 require_once "model/classes/class_Lamusee.php"; 
 require_once "model/classes/class_LMproperty.php"; 
 require_once "model/classes/class_LMObject.php"; 
