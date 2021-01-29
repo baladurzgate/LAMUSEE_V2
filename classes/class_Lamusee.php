@@ -621,7 +621,7 @@ class Lamusee{
 			
 			$view_page = "view_object.php";
 		
-			$link = 'http://localhost/LAMUSEE_V2/'.$view_page.'?id='.$id;
+			$link = $ROOT.$view_page.'?id='.$id;
 			
 		}
 			

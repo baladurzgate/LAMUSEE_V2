@@ -3,6 +3,7 @@
 global $lmdb; 
 
 require_once "config/LAMUSEE_DBconnect.php";
+require_once "config/config.php";
 require_once "classes/class_Lamusee.php"; 
 require_once "classes/class_LMproperty.php"; 
 require_once "classes/class_LMObject.php"; 
