@@ -1,3 +1,5 @@
+<?php require_once "templates/head.php"?>
+
 <?php
 require_once "lamusee.php"; 
 
@@ -17,12 +19,15 @@ $current_class = get_class($LMO);
 
 <?php
 
-foreach($LMO->properties as $p){
+/*foreach($LMO->properties as $p){
 
 	$p->get_html_output($lm,$LMO);
-}
+}*/
 
 include('templates/template_'.$current_class.'.php');
 
 
 ?>
+
+
+<?php require_once "templates/tail.php"?>

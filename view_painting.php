@@ -1,3 +1,6 @@
+<?php require_once "templates/head.php"?>
+
+
 <?php
 require_once "lamusee.php"; 
 
@@ -24,3 +27,6 @@ foreach($lm->paintings as $pa){
 
 
 ?>
+
+
+<?php require_once "templates/tail.php"?>
