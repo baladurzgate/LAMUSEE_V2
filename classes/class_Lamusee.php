@@ -599,7 +599,7 @@ class Lamusee{
 	
 	public function save_log(){
 		
-		$myfile = fopen("lamuseev2_log.html", "w");
+		$myfile = fopen($ROOT."log/lamusee_log.html", "w");
 		
 		$file = "lamuseev2_log.html";
 		// Ouvre un fichier pour lire un contenu existant
