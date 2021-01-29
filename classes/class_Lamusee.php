@@ -608,6 +608,7 @@ class Lamusee{
 	}
 	public function get_link($o){
 		
+		
 		$link ="";
 		
 		if(gettype($o) == "object"){
@@ -621,23 +622,29 @@ class Lamusee{
 		}
 			
 		return $link;
+		
+		
+
 
 	}
+	
 	public function get_html_link($o){
 		
-			$html = "";
-		
-			if(gettype($o) == "object"){
-		
-				$link = $this->get_link($o);
-				$key_value = $o->getKeyPropertyValue();
+		$html = "";
+	
+		if(gettype($o) == "object"){
+	
+			$link = $this->get_link($o);
 			
-				$html = '<a href="'.$link .'">'.$key_value.'</a>';
+			$key_value = $o->getKeyPropertyValue();
+		
+			$html = '<a href="'.$link .'">'.$key_value.'</a>';
 
-							
-			}
-			
-			return $html;				
+						
+		}
+		
+		return $html;	
+
 
 
 	}
@@ -661,9 +668,12 @@ class Lamusee{
 		
 		$key_value= $obj->$keyp;
 		
-		$number = sizeof($this->$arrayname)+$increment;  // RISKY !!! what if the count is not chronological ? 
+		$number = uniqid();
+		
+		//$number = sizeof($this->$arrayname)+$increment;  // RISKY !!! what if the count is not chronological ? 
 		
 		//$serial = "LM".$class.sizeof($this->$arrayname)."-".strlen($key_value).rand(000,100);
+		
 		$serial = "LM".$class."-".$number;
 
 		return $serial;
@@ -672,19 +682,24 @@ class Lamusee{
 	
 
 	public function find_lmobject($LMID){
+		
+		if(gettype($LMID) == "string"){
+		
+			$explode = explode("-",$LMID,);
+			$class_plurial = substr($explode[0],2)."s";
+			
+			//temporary not the best method
+			//would be better to make an 2d array  with id and objects 
+			
+			foreach($this->$class_plurial as $o){
+				if($o->LMID == $LMID){
+					return $o;
+					
+				}
+			}
 
-		
-		$explode = explode("-",$LMID,);
-		$class = substr($explode[0],2)."s";
-		$index = $explode[1];
-		
-		if (array_key_exists($index, $this->$class)) {
-		
-			return $this->$class[$index];
 		
 		}
-		
-
 				
 		return false;
 		

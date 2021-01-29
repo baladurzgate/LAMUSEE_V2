@@ -7,7 +7,31 @@ $picture = $lm->find_lmobject($pa->pictures[0]);
 
 $map_name = $picture->LMID;
 
-$text = $lm->find_lmobject($pa->linked_texts[0]);
+$linked_texts_id = $pa->linked_texts;
+
+echo "<br>";
+
+//printf("uniqid(): %s\r\n", uniqid());
+echo uniqid();
+echo "<br>";echo uniqid();
+echo "<br>";echo uniqid();
+echo "<br>";
+
+$text = "";
+
+if($linked_texts_id != null){
+
+		if(gettype($linked_texts_id)=="array"){
+			$text = $lm->find_lmobject($linked_texts_id[0]);
+		}else{
+			
+			$text = $lm->find_lmobject($linked_texts_id);
+		}
+		
+	echo $text->name;
+	
+}
+
 
 
 ?>
