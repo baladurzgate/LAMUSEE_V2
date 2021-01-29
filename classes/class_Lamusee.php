@@ -599,7 +599,9 @@ class Lamusee{
 	
 	public function save_log(){
 		
-		$myfile = fopen($ROOT."log/lamusee_log.html", "w");
+		global $_ROOT;
+		
+		$myfile = fopen($_ROOT."log/lamusee_log.html", "w");
 		
 		$file = "lamuseev2_log.html";
 		// Ouvre un fichier pour lire un contenu existant
@@ -612,6 +614,8 @@ class Lamusee{
 	}
 	public function get_link($o){
 		
+		global $_ROOT;
+		
 		
 		$link ="";
 		
@@ -621,7 +625,7 @@ class Lamusee{
 			
 			$view_page = "view_object.php";
 		
-			$link = $ROOT.$view_page.'?id='.$id;
+			$link = $_ROOT.$view_page.'?id='.$id;
 			
 		}
 			
