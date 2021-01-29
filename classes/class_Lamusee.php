@@ -696,7 +696,9 @@ class Lamusee{
 			//would be better to make an 2d array  with id and objects 
 			
 			foreach($this->$class_plurial as $o){
+				
 				if($o->LMID == $LMID){
+					
 					return $o;
 					
 				}

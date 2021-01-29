@@ -1,11 +1,10 @@
 <?php
 		
-		echo '<br>';
-		echo $LMO->name;
-		echo '<br>';
-		echo  $LMO->get_thumbnail_html();
+foreach($LMO->properties as $p){
+
+	$p->get_html_output($lm,$LMO);
 	
-		
-		echo '<br>';
+}
+
 
 ?>

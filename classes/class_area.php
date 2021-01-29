@@ -69,6 +69,10 @@ class area extends LMObject{
 	
 	}
 	
+	public function link_to_picture($pid){
+		$area_painting = $pid;
+	}
+	
 	
 	public function getShapeName(){ return $this->area_shape_name;}
 	public function setShapeName($sn){ $this->area_shape_name = $sn;}
@@ -195,7 +199,13 @@ class area extends LMObject{
 	public function getPng(){
 		
 		$path = 'data/png/'.$this->area_id.'.png';
-		echo '<img src="'.$path .'">';
+		
+		if(file_exists($path)){
+			
+			return  '<img src="'.$path .'">';
+			
+		}
+		return false;
 	}
 	
 
@@ -203,6 +213,7 @@ class area extends LMObject{
 	public function createPng($lm){
 		
 		$linked_picture = $lm->find_lmobject($this->area_painting);
+		
 		$image_path = $linked_picture->file_path;
 		
 		$image = imagecreatefromjpeg($image_path);
@@ -223,12 +234,15 @@ class area extends LMObject{
 				$path = 'data/png/'.$this->area_id.'.png';
 				
 				imagepng($cropedimage,$path);
-				//imagepng($cropedimage,$path);
 				
-				echo '<img src="'.$path .'">';
+				return $path;
+
+
 			}			
 			
 		}
+		
+		return false;
 			
 	}
 	

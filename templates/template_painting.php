@@ -90,4 +90,16 @@ if($linked_texts_id != null){
 			<div class="slide-left"><a href="<?php// echo $details_link; ?>">▲<br>detail</a></div>
 		</div>
 
+<?php
+
+
+foreach($LMO->properties as $p){
+
+	$p->get_html_output($lm,$LMO);
+	
+}
+
+
+
+?>
 	

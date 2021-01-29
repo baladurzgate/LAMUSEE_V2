@@ -13,9 +13,14 @@ $lm->load_tables();
 
 foreach($lm->areas as $a){
 
-	//$a->createPng($lm);
 	
-	$a->getPng();
+	if($a->getPng()==false){
+		
+		$a->createPng($lm);
+		
+	}
+	
+	echo $a->getPng();
 }
 
 //include('templates/template_'.$current_class.'.php');

@@ -83,6 +83,12 @@ class picture extends LMObject
 		
 	}
 	
+	public function add_highrez_image($id){
+
+		$this->highres_image = $id;
+		
+	}
+	
 	public function get_html(){
 		return '<img src="'.$this->file_path.'">';
 	}
