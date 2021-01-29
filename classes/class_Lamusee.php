@@ -447,27 +447,6 @@ class Lamusee{
 
 	
 	
-	public function generate_serial($obj,$increment=0){
-		
-		
-		$class = get_class($obj);
-
-		$arrayname = $class."s";
-		
-		$keyp = $obj->KeyProperty;
-		
-		$key_value= $obj->$keyp;
-		
-		$number = sizeof($this->$arrayname)+$increment;
-		
-		//$serial = "LM".$class.sizeof($this->$arrayname)."-".strlen($key_value).rand(000,100);
-		$serial = "LM".$class."-".$number;
-
-		return $serial;
-		
-	}
-	
-	
 	public function addObject($LMClass,$properties){
 		
 		// warning this function does not check for duplicates before pushing
@@ -635,9 +614,9 @@ class Lamusee{
 		
 			$id = $o->LMID;
 			
-			$view_page = "object_view.php";
+			$view_page = "view_object.php";
 		
-			$link = 'http://localhost/lamuseev2/'.$view_page.'?id='.$id;
+			$link = 'http://localhost/LAMUSEE_V2/'.$view_page.'?id='.$id;
 			
 		}
 			
