@@ -178,7 +178,7 @@ foreach ( $all_published_posts as $post ) {
 						
 						$new_shape = $lm->addObject('shape',$shape_params);
 						
-						$new_shap->add_painting($future_painting_LMID); //we link the wp_id to the shape
+						$new_shape->add_painting($future_painting_LMID); //we link the wp_id to the shape
 						
 						$found_shape = $new_shape;
 						
