@@ -19,7 +19,7 @@ foreach($lm->paintings as $painting){
 		echo $lm->get_html_link($pict);
 	}
 	
-	echo '<br>';
+	echo '<br>sss';
 	
 }
 
