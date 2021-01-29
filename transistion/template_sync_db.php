@@ -1,6 +1,6 @@
 <?php /* Template Name: SYNC*/ get_header(); ?>
 
-<?php require_once "Lamuseev2/lamuseeV2_main.php"; ?>
+<?php require_once "LAMUSEE_V2/lamusee.php"; ?>
 <?php 
 
 echo "Class test";
@@ -98,7 +98,7 @@ foreach ( $all_published_posts as $post ) {
 				$lr_picture_params['name'] = get_field('lowres_image',$post->ID);
 				$test_lr_picture = new picture($lr_picture_params);
 				
-				$future_picture_ID = $lm->generate_serial($test_lr_picture,1); // this LMID will be taken buy the second created picture
+				$future_picture_ID = $lm->generate_serial($test_lr_picture); // this LMID will be taken buy the second created picture
 
 				$areas_field = get_field('areas',$post->ID);
 				
@@ -254,7 +254,7 @@ foreach ( $all_published_posts as $post ) {
 				$hr_picture_params['map_offset_x'] = 0;
 				$hr_picture_params['map_offset_y'] = 0;
 				$hr_picture_params['dimensions'] = 0;
-				$hr_picture_params['highres_image'] = "";
+
 
 				$test_hr_picture = new picture($hr_picture_params);
 				
@@ -315,7 +315,7 @@ foreach ( $all_published_posts as $post ) {
 	
 				}else{
 					
-					$new_picture = $lm->addObject("picture",$picture_params);
+					$new_picture = $lm->addObject("picture",$picture_params,$future_picture_ID);
 					$picture_found_id = $new_picture->LMID;
 					
 				}
@@ -633,7 +633,7 @@ foreach ( $all_published_posts as $post ) {
 				//relinking painting to shapes
 				
 				
-				$lm->addObject('painting',$painting_params);
+				$lm->addObject('painting',$painting_params,$future_painting_LMID);
 				
 				
 				

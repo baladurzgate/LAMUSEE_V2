@@ -455,13 +455,11 @@ class Lamusee{
 		
 		$nObj = new $LMClass($properties);
 
-		$serialnumber = $this->generate_serial($nObj);
-		
 		$keyp = $nObj->KeyProperty;
 		
 		$key_value= $nObj->$keyp;
 		
-		$LMID = $serialnumber;
+		$LMID = $this->generate_serial($nObj);
 		
 		$nObj->LMtimestamp = time();
 		
