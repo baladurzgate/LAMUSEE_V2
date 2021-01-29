@@ -1,5 +1,5 @@
 <?php
-require_once "lamuseeV2_main.php"; 
+require_once "lamusee.php"; 
 
 $lm = new Lamusee();
 
