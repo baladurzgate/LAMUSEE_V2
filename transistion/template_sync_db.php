@@ -178,14 +178,16 @@ foreach ( $all_published_posts as $post ) {
 						
 						$new_shape = $lm->addObject('shape',$shape_params);
 						
-						$new_shape->add_painting($future_painting_LMID); //we link the future id to the shape
+						$new_shap->add_painting($future_painting_LMID); //we link the wp_id to the shape
 						
 						$found_shape = $new_shape;
 						
 						
+						
+						
 					}else{
 						
-						$stored_shape->add_painting($future_painting_LMID); //we link the future id to the shape
+						$stored_shape->add_painting($future_painting_LMID); //we link the wp_id to the shape
 						
 						$found_shape = $stored_shape;
 
@@ -258,7 +260,7 @@ foreach ( $all_published_posts as $post ) {
 				$hr_picture_params['dimensions'] = 0;
 
 
-				$test_hr_picture = new picture($hr_picture_params);
+				/*$test_hr_picture = new picture($hr_picture_params);
 				
 				$stored_hr_picture = $lm->alreadyExist($test_hr_picture);
 				
@@ -270,11 +272,11 @@ foreach ( $all_published_posts as $post ) {
 					
 					
 				}else{
-					
+					*/
 					$new_hr_picture = $lm->addObject("picture",$hr_picture_params);
 					$hr_found_id = $new_hr_picture->LMID;
 					
-				}
+				//}
 				
 				echo'<br> hr_found_id ******************************';
 				print_r($hr_found_id);
@@ -660,6 +662,5 @@ $lm->save_log();
 
 
 ?>
-
 
 
