@@ -84,6 +84,7 @@ class shape extends LMObject{
 		$random_pool =Array();;
 		
 		foreach($this->shape_paintings_list as $p){
+		
 			if($p != $current_p){
 				array_push($random_pool,$p);
 				

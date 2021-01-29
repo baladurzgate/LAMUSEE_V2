@@ -447,7 +447,7 @@ class Lamusee{
 
 	
 	
-	public function addObject($LMClass,$properties){
+	public function addObject($LMClass,$properties,$forcedid=""){
 		
 		// warning this function does not check for duplicates before pushing
 			
@@ -465,7 +465,13 @@ class Lamusee{
 		
 		$nObj->LMtimestamp = time();
 		
-		$nObj->setLMID($LMID);
+		if($forcedid==""){
+			$nObj->setLMID($LMID);
+		}else{
+			$nObj->setLMID($forcedid);
+		}
+		
+		
 		
 		array_push($this->$arrayname,$nObj);	
 		array_push($this->LMobjects,$nObj);	
