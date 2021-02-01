@@ -1,5 +1,4 @@
-<?php /* Template Name: SYNC*/ get_header(); ?>
-
+<!--REQUIRE THIS FILE IN A WP PAGE TEMPLATE !  -->
 <?php require_once "LAMUSEE_V2/lamusee.php"; ?>
 <?php 
 
