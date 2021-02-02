@@ -30,6 +30,8 @@ img.emoji {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="<?php echo $_ROOT?>web/js/lib/modernizr-2.7.1.min.js"></script>
 <script src="<?php echo $_ROOT?>web/js/lib/jquery-ui.min.js"></script>
+<script src="<?php echo $_ROOT?>web/js/lib/conditionizr-4.3.0.min.js"></script>
+<script src="<?php echo $_ROOT?>web/js/lib/jquery.mCustomScrollbar.concat.min.js"></script>
 <script src="<?php echo $_ROOT?>web/js/scripts.js"></script>
 </head>
 <body>
