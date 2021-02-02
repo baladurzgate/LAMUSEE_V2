@@ -12,6 +12,8 @@ $all_published_posts = get_posts($query);
 
 $lm->create_tables();
 
+$lm->load_tables();
+
 ?>
 
 	

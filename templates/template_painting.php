@@ -26,18 +26,12 @@ if($linked_texts_id != null){
 			
 			$text = $lm->find_lmobject($linked_texts_id);
 		}
-		
-	echo $text->name;
 	
 }
 
 
 
 ?>
-
-<map name="workmap">
-
-</map>
 
 <?php  ?>
 	

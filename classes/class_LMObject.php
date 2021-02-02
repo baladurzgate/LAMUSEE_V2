@@ -103,6 +103,7 @@ class LMObject
 
 	}
 	
+	
 	public function set_property_value($pn,$v){
 		$p = $this->properties[$pn];
 	}
