@@ -1,5 +1,5 @@
 <!--REQUIRE THIS FILE IN A WP PAGE TEMPLATE !  -->
-<?php include "LAMUSEE_V2/lamusee.php"; ?>
+<?php include "lamusee.php"; ?>
 <?php 
 
 echo "Class test";

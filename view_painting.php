@@ -2,7 +2,7 @@
 
 
 <?php
-require_once "lamusee.php"; 
+include "lamusee.php"; 
 
 $lm = new Lamusee();
 
