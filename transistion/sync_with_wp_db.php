@@ -652,12 +652,6 @@ $lm-> display_tables();
 echo $lm->get_log_html();
 $lm->save_log();
 
-// SECOND LEVEL THROUGH OBJECTS COMMON TO SEVERAL PAINTINGS (SHAPES, AUTHOR, ect...)
-
-
-//print_r($lm->places);
-//print_r($lm->shapes);
-//print_r($lm->paintings);
 
 
 ?>

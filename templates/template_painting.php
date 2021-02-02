@@ -2,7 +2,6 @@
 
 $pa = $LMO; 
 
-
 $picture = $lm->find_lmobject($pa->pictures[0]);
 
 $map_name = $picture->LMID;

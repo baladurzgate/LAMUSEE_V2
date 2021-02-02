@@ -623,7 +623,7 @@ class Lamusee{
 		
 			$id = $o->LMID;
 			
-			$view_page = "view_object.php";
+			$view_page = "index.php";
 		
 			$link = $_ROOT.$view_page.'?id='.$id;
 			
