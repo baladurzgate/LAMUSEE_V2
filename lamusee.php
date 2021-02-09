@@ -1,23 +1,24 @@
 <?php 
+echo "CLASSES";
 //IMPORT CLASSES ! 
 global $lmdb; 
 
-require_once "config/LAMUSEE_DBconnect.php";
-require_once "config/config.php";
-require_once "classes/class_Lamusee.php"; 
-require_once "classes/class_LMproperty.php"; 
-require_once "classes/class_LMObject.php"; 
-require_once "classes/class_place.php"; 
-require_once "classes/class_region.php"; 
-require_once "classes/class_people.php"; 
-require_once "classes/class_picture.php"; 
-require_once "classes/class_painting.php"; 
-require_once "classes/class_text.php"; 
-require_once "classes/class_book.php"; 
-require_once "classes/class_shape.php"; 
-require_once "classes/class_area.php"; 
-require_once "classes/class_period.php"; 
-require_once "classes/utils.php"; 
+include "config/LAMUSEE_DBconnect.php";
+include "config/config.php";
+include "classes/class_Lamusee.php"; 
+include "classes/class_LMproperty.php"; 
+include "classes/class_LMObject.php"; 
+include "classes/class_place.php"; 
+include "classes/class_region.php"; 
+include "classes/class_people.php"; 
+include "classes/class_picture.php"; 
+include "classes/class_painting.php"; 
+include "classes/class_text.php"; 
+include "classes/class_book.php"; 
+include "classes/class_shape.php"; 
+include "classes/class_area.php"; 
+include "classes/class_period.php"; 
+include "classes/utils.php"; 
 
 
 

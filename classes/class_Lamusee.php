@@ -35,6 +35,8 @@ class Lamusee{
 	
 	public function __construct() { 
 	
+		echo "new lamusee";
+	
 		$this->LMobjects = array();
 		$this->periods = array();
 		$this->shapes = array();
@@ -63,6 +65,8 @@ class Lamusee{
 	
 	
 	public function load_tables(){
+		
+		echo "LOAD TABLES";
 		
 		global $lmdb;
 		$lmdb = OpenLamuseeDB();

@@ -1,5 +1,5 @@
 <?php
-
+echo "HOME";
 foreach($lm->paintings as $painting){
 	
 	echo '<br>';

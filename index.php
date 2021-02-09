@@ -1,10 +1,13 @@
 <?php
-require_once "lamusee.php"; 
+echo "LAMUSEE_V2";
+
+include "lamusee.php"; 
+
 $lm = new Lamusee();
 
 $lm->load_tables();?>
 
-<?php require_once "web/header.php"?>
+<?php include "web/header.php"?>
 
 <?php 
 
