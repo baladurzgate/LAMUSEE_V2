@@ -89,12 +89,27 @@ class picture extends LMObject
 		
 	}
 	
+	//need to organise some upload directory 
+	
+	public function get_file_path(){
+		$path  = str_replace("http://localhost/", "http://www.alexandrecormier.fr/", $this->file_path);
+		return $path;
+		
+	}
+	
 	public function get_html(){
-		return '<img src="'.$this->file_path.'">';
+		
+		//http://localhost/lamusee.fr/htdocs/wp-content/uploads/2021/01/Cima_da_Conegliano_presentation_vierge_temple_z.jpg
+		$path = $this->file_path;
+
+		$path  = str_replace("http://localhost/", "http://www.alexandrecormier.fr/", $this->file_path);
+
+		return '<img src="'.$path.'">';
 	}
 	
 	public function get_thumbnail_html(){
-		return '<img src="'.$this->thumbnail_image_path.'">';
+		$path  = str_replace("http://localhost/", "http://www.alexandrecormier.fr/", $this->thumbnail_image_path);
+		return '<img src="'.$path.'">';
 	}
 	
 

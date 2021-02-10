@@ -697,11 +697,11 @@ class Lamusee{
 		
 		if(gettype($LMID) == "string"){
 		
-			$explode = explode("-",$LMID,);
+			$explode = explode("-",$LMID);
 			$class_plurial = substr($explode[0],2)."s";
 			
 			//temporary not the best method
-			//would be better to make an 2d array  with id and objects 
+			//would be better to make an 2d array  with id and objects */
 			
 			foreach($this->$class_plurial as $o){
 				

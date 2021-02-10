@@ -37,7 +37,7 @@ if($linked_texts_id != null){
 	
 	<figure id="illustration">
 		<div class = "imgborder">
-			<img id = "tableau" src="<?php echo $picture->file_path;?>"  border="0" usemap="#Map<?php $picture->LMID; ?>"/>
+			<img id = "tableau" src="<?php echo $picture->get_file_path();?>"  border="0" usemap="#Map<?php $picture->LMID; ?>"/>
 
 			<map name="#Map<?php $picture->LMID; ?>" >
 			<?php
