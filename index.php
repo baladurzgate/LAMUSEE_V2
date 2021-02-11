@@ -17,7 +17,6 @@ $lm->load_tables();?>
 
 $_ID = false;
 
-
 $_PAGE = false; 
 
 if(isset($_GET["id"])){
@@ -37,11 +36,13 @@ if($_ID!=false&&$_PAGE==false){
 	
 }
 
-if($_PAGE!=false){
+else if($_ID!=false&&$_PAGE=='edit'){
 	
-	include ("view_".$_PAGE.".php") ;
+	include ("edit_object.php") ;
 	
 }
+
+
 
 if($_ID==false&&$_PAGE==false){
 	

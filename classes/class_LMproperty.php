@@ -18,9 +18,40 @@
 		
 		}
 		
-		public function html_input(){
+		public function get_html_input($lm,$o){
 			
-			echo "";
+			$pname = $this->name;
+		
+			$value = $o->$pname;
+			
+			echo '<br>'.$pname.' : <input type="text" id="'.$pname.'" name="'.$pname.'" list="'.$pname.'_list">';
+			
+			if($this->called_class!=""){
+				
+
+				$class_plurial = $this->called_class."s";				
+				
+				$instances_list = $lm->$class_plurial;
+				
+				//need to remove self from the list
+					
+				
+				
+				echo '<datalist id="'.$pname.'_list">';
+				
+				foreach($instances_list as $i){
+					echo '<option value="'.$i->LMID.'">'.$i->getKeyPropertyValue().'</option>';
+				}
+
+				echo '</datalist>';
+				
+				if(gettype($value)=="array"){
+					
+					//some js ? 
+					
+				}
+			
+			}
 			
 		}
 		
@@ -36,7 +67,6 @@
 			
 			if($value!=""){
 
-				
 				if($this->called_class!=""){
 					
 					if(gettype($value)=="array"){

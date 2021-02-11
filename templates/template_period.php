@@ -9,4 +9,3 @@ foreach($LMO->properties as $p){
 
 ?>
 
-?>
