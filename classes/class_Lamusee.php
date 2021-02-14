@@ -55,16 +55,16 @@ class Lamusee{
 		
 		$this->prototypes = array();
 		
-		$this->prototypes['people'] =  = new people(array());
-		$this->prototypes['shape'] =  = new shape(array());
-		$this->prototypes['area'] =  = new area(array());
-		$this->prototypes['place'] =  = new place(array());
-		$this->prototypes['region'] =  = new region(array());
-		$this->prototypes['painting'] =  = new painting(array());	
-		$this->prototypes['picture'] =  = new picture(array());		
-		$this->prototypes['book'] =  = new book(array());		
-		$this->prototypes['text'] =  = new text(array());		
-		$this->prototypes['period'] =  = new period(array());
+		$this->prototypes['people'] =new people(array());
+		$this->prototypes['shape'] =  new shape(array());
+		$this->prototypes['area'] =   new area(array());
+		$this->prototypes['place'] =   new place(array());
+		$this->prototypes['region'] =   new region(array());
+		$this->prototypes['painting'] =   new painting(array());	
+		$this->prototypes['picture'] =   new picture(array());		
+		$this->prototypes['book'] =  new book(array());		
+		$this->prototypes['text'] =  new text(array());		
+		$this->prototypes['period'] =  new period(array());
 	
 	}
 	
@@ -87,7 +87,7 @@ class Lamusee{
 		
 		foreach($this->prototypes as $p){
 			
-			$this->load_table($this->prototypes[$p]);
+			$this->load_table($p);
 			
 		}
 		
@@ -102,7 +102,7 @@ class Lamusee{
 		
 		foreach($this->prototypes as $p){
 			
-			$this->build_table($this->prototypes[$p]);
+			$this->build_table($p);
 			
 		}
 		
@@ -618,7 +618,7 @@ class Lamusee{
 
 	}
 	
-	public get_add_link($obj,$html=false){
+	public function get_add_link($obj,$html=false){
 		
 		$class = get_class($obj);
 		
