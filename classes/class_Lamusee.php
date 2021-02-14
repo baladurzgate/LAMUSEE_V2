@@ -620,6 +620,8 @@ class Lamusee{
 	
 	public function get_add_link($obj,$html=false){
 		
+			global $_ROOT;
+		
 		$class = get_class($obj);
 		
 		$view_page = "index.php";
