@@ -1,5 +1,5 @@
 <?php
-echo "HOME";
+echo "ADMIN";
 
 
 foreach($lm->paintings as $painting){
@@ -17,7 +17,8 @@ foreach($lm->paintings as $painting){
 		echo $lm->get_html_link($pict);
 	}
 	
-	echo '<br>sss';
+	echo '<br>';
+	echo $lm->get_html_edit_link($painting);
 	
 }
 

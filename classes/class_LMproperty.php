@@ -24,6 +24,8 @@
 		
 			$value = $o->$pname;
 			
+			//put everithing in hidden mode and just make inputs with js ? 
+			
 			echo '<br>'.$pname.' : <input type="text" id="'.$pname.'" name="'.$pname.'" list="'.$pname.'_list">';
 			
 			if($this->called_class!=""){

@@ -19,6 +19,8 @@ $_ID = false;
 
 $_PAGE = false; 
 
+$_MODE = false;
+
 if(isset($_GET["id"])){
 	
 	$_ID = $_GET["id"]; 	
@@ -30,23 +32,30 @@ if(isset($_GET["page"])){
 
 }
 
-if($_ID!=false&&$_PAGE==false){
+if(isset($_GET["mode"])){
+	
+	$_MODE = $_GET["mode"];	
+
+}
+
+
+if($_ID!=false&&$_MODE=='view'){
 	
 	include ("view_object.php") ;
 	
 }
 
-else if($_ID!=false&&$_PAGE=='edit'){
+
+if($_MODE=='edit' &&$_ID!=false){
 	
 	include ("edit_object.php") ;
 	
 }
 
-
-
 if($_ID==false&&$_PAGE==false){
 	
-	include "web/home.php"; 
+	include "admin.php"; 
+	//include "web/home.php"; 
 	
 }
 

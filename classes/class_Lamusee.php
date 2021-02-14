@@ -28,6 +28,8 @@ class Lamusee{
 	public $LMobjects;
 	public $periods;
 	public $messagelogs;
+	
+	public $prototypes;
 
 
 	
@@ -50,7 +52,19 @@ class Lamusee{
 		$this->regions = array();	
 		$this->books = array();
 		$this->messagelogs = array();
-
+		
+		$this->prototypes = array();
+		
+		$this->prototypes['people'] =  = new people(array());
+		$this->prototypes['shape'] =  = new shape(array());
+		$this->prototypes['area'] =  = new area(array());
+		$this->prototypes['place'] =  = new place(array());
+		$this->prototypes['region'] =  = new region(array());
+		$this->prototypes['painting'] =  = new painting(array());	
+		$this->prototypes['picture'] =  = new picture(array());		
+		$this->prototypes['book'] =  = new book(array());		
+		$this->prototypes['text'] =  = new text(array());		
+		$this->prototypes['period'] =  = new period(array());
 	
 	}
 	
@@ -71,28 +85,12 @@ class Lamusee{
 		global $lmdb;
 		$lmdb = OpenLamuseeDB();
 		
-		$people = new people(array());
-		$shape = new shape(array());
-		$area = new area(array());
-		$place = new place(array());
-		$region = new region(array());
-		$painting = new painting(array());	
-		$picture = new picture(array());		
-		$book = new book(array());		
-		$text = new text(array());		
-		$period = new period(array());		
+		foreach($this->prototypes as $p){
+			
+			$this->load_table($this->prototypes[$p]);
+			
+		}
 		
-		$this->load_table($people);
-		$this->load_table($shape);
-		$this->load_table($area);
-		$this->load_table($place);
-		$this->load_table($region);
-		$this->load_table($painting);
-		$this->load_table($picture);
-		$this->load_table($text);
-		$this->load_table($book);
-		$this->load_table($period);
-	
 		
 	}
 	
@@ -100,29 +98,14 @@ class Lamusee{
 		
 		global $lmdb;
 		$lmdb = OpenLamuseeDB();
+	
 		
+		foreach($this->prototypes as $p){
+			
+			$this->build_table($this->prototypes[$p]);
+			
+		}
 		
-		$people = new people(array());
-		$shape = new shape(array());
-		$area = new area(array());
-		$region = new region(array());
-		$place = new place(array());
-		$painting = new painting(array());
-		$picture = new picture(array());
-		$book = new book(array());
-		$text = new text(array());
-		$period = new period(array());	
-
-		$this->build_table($picture);
-		$this->build_table($people);
-		$this->build_table($shape);
-		$this->build_table($area);
-		$this->build_table($place);
-		$this->build_table($region);
-		$this->build_table($painting);
-		$this->build_table($book);
-		$this->build_table($text);
-		$this->build_table($period);
 
 	}
 	
@@ -177,55 +160,24 @@ class Lamusee{
 		global $lmdb;
 		$lmdb = OpenLamuseeDB();
 		
-		$people = new people(array());
-		$shape = new shape(array());
-		$area = new area(array());
-		$place = new place(array());
-		$region = new region(array());
-		$painting = new painting(array());		
-		$picture = new picture(array());
-		$book = new book(array());
-		$text = new text(array());
-		$period = new period(array());	
-		
-		$this->update_table($area);
-		$this->update_table($shape);
-		$this->update_table($people);
-		$this->update_table($place);
-		$this->update_table($region);
-		$this->update_table($painting);
-		$this->update_table($picture);
-		$this->update_table($book);
-		$this->update_table($text);
-		$this->update_table($period);
-		
+		foreach($this->prototypes as $p){
+			
+			$this->update_table($this->prototypes[$p]);
+			
+		}
+				
 		
 	}
 	
 	
 	public function display_tables(){
 		
-		$people = new people(array());
-		$shape = new shape(array());
-		$area = new area(array());
-		$place = new place(array());
-		$region = new region(array());
-		$painting = new painting(array());	
-		$picture = new picture(array());	
-		$book = new book(array());		
-		$text = new text(array());
-		$period = new period(array());
-		
-		$this->display_lmobj_list($area);
-		$this->display_lmobj_list($shape);
-		$this->display_lmobj_list($people);
-		$this->display_lmobj_list($place);
-		$this->display_lmobj_list($region);
-		$this->display_lmobj_list($picture);
-		$this->display_lmobj_list($painting);
-		$this->display_lmobj_list($text);
-		$this->display_lmobj_list($book);
-		$this->display_lmobj_list($period);
+
+		foreach($this->prototypes as $p){
+			
+			$this->display_lmobj_list($this->prototypes[$p]);
+			
+		}
 
 
 
@@ -241,6 +193,7 @@ class Lamusee{
 			$o->display_in_html();
 		}		
 	}
+	
 
 	
 	public function update_table($obj){
@@ -262,6 +215,8 @@ class Lamusee{
 		}
 
 	}
+	
+	
 	
 	public function add_or_update_LMobject_in_db($o){
 		
@@ -629,7 +584,7 @@ class Lamusee{
 			
 			$view_page = "index.php";
 		
-			$link = $_ROOT.$view_page.'?id='.$id;
+			$link = $_ROOT.$view_page.'?mode=view&id='.$id;
 			
 		}
 			
@@ -639,6 +594,73 @@ class Lamusee{
 
 
 	}
+	public function get_edit_link($o){
+		
+		global $_ROOT;
+		
+		
+		$link ="";
+		
+		if(gettype($o) == "object"){
+		
+			$id = $o->LMID;
+			
+			$view_page = "index.php";
+		
+			$link = $_ROOT.$view_page.'?mode=edit&&id='.$id;
+			
+		}
+			
+		return $link;
+		
+		
+
+
+	}
+	
+	public get_add_link($obj,$html=false){
+		
+		$class = get_class($obj);
+		
+		$view_page = "index.php";
+		
+		$link = $_ROOT.$view_page.'?mode=edit&&id=new_'.$class;
+		
+		if($html){
+		
+			return'<a href="'.$link .'"> new '.$class.' </a>';
+			
+		}else{
+			return $link;
+		}
+		
+		
+		
+	}
+
+	
+	public function get_html_edit_link($o){
+		
+		$html = "";
+	
+		if(gettype($o) == "object"){
+	
+			$link = $this->get_edit_link($o);
+			
+			$key_value = $o->getKeyPropertyValue();
+		
+			$html = '<a href="'.$link .'"> EDIT </a>';
+
+						
+		}
+		
+		return $html;
+		
+		
+
+
+	}
+
 	
 	public function get_html_link($o){
 		
