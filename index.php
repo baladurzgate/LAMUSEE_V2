@@ -52,6 +52,12 @@ if($_MODE=='edit' &&$_ID!=false){
 	
 }
 
+if($_MODE=='add' &&$_ID!=false){
+	
+	include ("add_object.php") ;
+	
+}
+
 if($_ID==false&&$_PAGE==false){
 	
 	include "admin.php"; 
