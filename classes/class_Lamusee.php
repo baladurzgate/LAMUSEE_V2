@@ -160,9 +160,9 @@ class Lamusee{
 		global $lmdb;
 		$lmdb = OpenLamuseeDB();
 		
-		foreach($this->prototypes as $p){
+		foreach($this->prototypes as $p => $prototype){
 			
-			$this->update_table($this->prototypes[$p]);
+			$this->update_table($prototype);
 			
 		}
 				
@@ -172,26 +172,22 @@ class Lamusee{
 	
 	public function display_tables(){
 		
-
-		foreach($this->prototypes as $p){
-			
-			$this->display_lmobj_list($this->prototypes[$p]);
-			
+		foreach($this->prototypes as $p => $prototype){
+			if(isset($prototype) && is_object($prototype)){
+				$this->display_lmobj_list($prototype);
+			}	
 		}
-
-
 
 	}
 	
 	public function display_lmobj_list($obj){
-		
-		$class = get_class($obj);
-		
-		$class_plurial = $class."s";
-		
-		foreach($this->$class_plurial as $o){
-			$o->display_in_html();
-		}		
+		if($obj!=null){
+			$class = get_class($obj);
+			$class_plurial = $class."s";
+			foreach($this->$class_plurial as $o){
+				$o->display_in_html();
+			}		
+		}	
 	}
 	
 
@@ -233,9 +229,15 @@ class Lamusee{
 		// check if the object is already stored in the db by its  LMID
 
 		$sql = "SELECT * FROM ".$table_name." WHERE LMID = '".$o->LMID."'";
-		
-		$result = $lmdb->query($sql);
 
+
+
+		try{
+			$result = $lmdb->query($sql);
+		} catch (Exception $e) {
+			echo 'Exception reçue : ',  $e->getMessage(), "\n";
+		}
+		
 		
 		if ($result->num_rows > 0) {
 				
@@ -557,10 +559,6 @@ class Lamusee{
 	}
 	
 	public function save_log(){
-		
-		global $_ROOT;
-		
-		$myfile = fopen($_ROOT."log/lamusee_log.html", "w");
 		
 		$file = "lamuseev2_log.html";
 		// Ouvre un fichier pour lire un contenu existant
